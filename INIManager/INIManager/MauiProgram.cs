@@ -1,6 +1,5 @@
 ﻿using INIManager.Components.Database;
 using Microsoft.Extensions.Logging;
-using MudBlazor.Services;
 using Radzen;
 
 namespace INIManager;
@@ -17,7 +16,6 @@ public static class MauiProgram
         builder.Services.AddMauiBlazorWebView();
         //Add Radzen and MudBlazor services
         builder.Services.AddRadzenComponents();
-        builder.Services.AddMudServices();
 
         string connectionString = "Server=localhost;Port=3306;Database=inimanager_db;Uid=root;Pwd=;";
         builder.Services.AddSingleton(new DbConnector(connectionString));

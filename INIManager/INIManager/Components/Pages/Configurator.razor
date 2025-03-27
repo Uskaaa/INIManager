@@ -2,23 +2,38 @@
 @using INIManager.Components.Database
 @inject DbManager DbManager
 
-@if (isConnected)
-{
-    <h1>Connected</h1>
-}
-else
-{
-    <h1>Not connected</h1>
-}
+<h3>Drag-and-Drop Test</h3>
+
+<div draggable="true"
+     @ondragstart="OnDragStart"
+     style="background-color: lightblue; padding: 10px; width: 100px;">
+    Drag me!
+</div>
+
+<div @ondragover="OnDragOver"
+     @ondragover:preventDefault
+     @ondrop="OnDrop"
+     style="border: 2px dashed red; padding: 20px; margin: 10px; height: 100px;">
+    Drop here!
+</div>
+
+<p>Log: @logMessage</p>
 
 @code {
-    bool isConnected;
-    protected override async Task OnInitializedAsync()
+    private string logMessage = "Waiting for events...";
+
+    private void OnDragStart(DragEventArgs args)
     {
-        isConnected = await DbManager.TestConnectionAsync();
-        if (isConnected)
-            Console.WriteLine("Datenbankverbindung erfolgreich!");
-        else
-            Console.WriteLine("Datenbankverbindung fehlgeschlagen!");
+        logMessage = "Drag started at " + DateTime.Now.ToString("HH:mm:ss");
+    }
+
+    private void OnDragOver(DragEventArgs args)
+    {
+        logMessage = "Drag over at " + DateTime.Now.ToString("HH:mm:ss");
+    }
+
+    private void OnDrop(DragEventArgs args)
+    {
+        logMessage = "Dropped at " + DateTime.Now.ToString("HH:mm:ss");
     }
 }
