@@ -1,7 +1,103 @@
 ﻿@page "/"
+@using INIManagerServer.Components.Models
+@using DataGridEditMode = Radzen.DataGridEditMode
+@using Variant = Radzen.Variant
 
-<PageTitle>Home</PageTitle>
+<style>
+    .rz-grid-table {
+        width: unset;
+    }
+</style>
 
-<h1>Hello, world!</h1>
+<div style="">
+    <h1>Bisherige Konfigurationen</h1>
+</div>
 
-Welcome to your new app.
+<div style="width: 50%">
+<RadzenDataGrid @ref="configuration" AllowAlternatingRows="false" AllowFiltering="true" AllowPaging="true" PageSize="5" AllowSorting="true" EditMode="@editMode"
+                Data="@configurations" TItem="Configuration" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow" Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
+    <Columns>
+        <RadzenDataGridColumn Property="Id" Title="Id" Width="120px" Frozen="true" />
+
+        <RadzenDataGridColumn Property="@nameof(Configuration.Name)" Title="Name" Width="200px"></RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(Configuration.Path)" Title="Path" Width="200px"></RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(Configuration.AmountOfWS)" Title="Amount of WS" Width="200px"></RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(Configuration.CreationDate)" Title="Creation Date" Width="200px"></RadzenDataGridColumn>
+        <RadzenDataGridColumn Context="user" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Frozen="true" FrozenPosition="FrozenColumnPosition.Right" Width="150px">
+            <Template Context="user">
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => EditRow(user))" @onclick:stopPropagation="true"/>
+                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Medium" Shade="Shade.Lighter" class="rz-my-1 rz-ms-1" Click="@(args => DeleteRow(user))" @onclick:stopPropagation="true"/>
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+</div>
+
+@code {
+    RadzenDataGrid<Configuration> configuration;
+    IEnumerable<Configuration> configurations;
+
+    DataGridEditMode editMode = DataGridEditMode.Single;
+
+    List<Configuration> ordersToInsert = new List<Configuration>();
+    List<Configuration> ordersToUpdate = new List<Configuration>();
+
+    void Reset()
+    {
+        ordersToInsert.Clear();
+        ordersToUpdate.Clear();
+    }
+
+    void Reset(Configuration order)
+    {
+        ordersToInsert.Remove(order);
+        ordersToUpdate.Remove(order);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        //configurations = await _configurationService.GetConfigurations();
+    }
+
+    async Task EditRow(Configuration order)
+    {
+        if (!configuration.IsValid) return;
+
+        if (editMode == DataGridEditMode.Single)
+        {
+            Reset();
+        }
+
+        ordersToUpdate.Add(order);
+        await configuration.EditRow(order);
+    }
+
+    void OnUpdateRow(Configuration configuration)
+    {
+        Reset(configuration);
+    }
+
+    async Task DeleteRow(Configuration configuration)
+    {
+        Reset(configuration);
+
+        if (configurations.Contains(configuration))
+        {
+
+
+            await this.configuration.Reload();
+        }
+        else
+        {
+            this.configuration.CancelEditRow(configuration);
+            await this.configuration.Reload();
+        }
+    }
+
+    void OnCreateRow(Configuration configuration)
+    {
+        ordersToInsert.Remove(configuration);
+    }
+}

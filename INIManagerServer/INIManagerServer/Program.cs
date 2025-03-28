@@ -1,4 +1,7 @@
 using INIManagerServer.Components;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using MudBlazor.Services;
+using Radzen;
 
 namespace INIManagerServer;
 
@@ -11,6 +14,12 @@ public class Program
         // Add services to the container.
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
+        
+        //Add Radzen and MudBlazor Service
+        builder.Services.AddRadzenComponents();
+        builder.Services.AddMudServices();
+        
+        builder.Services.AddScoped<ProtectedLocalStorage>();
 
         var app = builder.Build();
 
