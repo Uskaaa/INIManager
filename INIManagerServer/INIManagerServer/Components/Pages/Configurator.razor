@@ -2,7 +2,13 @@
 @page "/Configurator/{Id}"
 @rendermode InteractiveServer
 
-<MudGrid Height="100vh">
+<style>
+    .duringdrag {
+        border: 1px solid black;
+    }
+</style>
+
+<MudGrid>
     <MudItem xs="6">
         <MudPaper Class="pa-16 ma-2" Outlined="true">
             <MudDropContainer T="DropItem" Items="_items" ItemsSelector="@((item,dropzone) => item.Selector == dropzone)" ItemDropped="ItemUpdated" Class="d-flex flex-wrap flex-grow-1">
@@ -19,7 +25,7 @@
                     }
                 </ChildContent>
                 <ItemRenderer>
-                    <MudListItem T="string" Text="@context.Name" />
+                    <MudListItem  T="string" Text="@context.Name" />
                 </ItemRenderer>
             </MudDropContainer>
         </MudPaper>
@@ -30,6 +36,27 @@
         </MudPaper>
     </MudItem>
 </MudGrid>
+
+<script>
+    window.addEventListener("DOMContentLoaded", () => {
+        const dropZones = document.getElementsByClassName("mud-drop-zone");
+
+        Array.from(dropZones).forEach(dropZone => {
+            dropZone.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                dropZone.classList.add("dragdrop");
+            });
+
+            dropZone.addEventListener("dragleave", () => {
+                dropZone.classList.remove("dragdrop");
+            });
+
+            dropZone.addEventListener("drop", () => {
+                dropZone.classList.remove("dragdrop");
+            });
+        });
+    });
+</script>
 
 @code {
 
