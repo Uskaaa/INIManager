@@ -1,68 +1,137 @@
 ﻿@page "/Configurator"
 @page "/Configurator/{Id}"
 @rendermode InteractiveServer
+@inject IJSRuntime JSRuntime
 
-<style>
-    .duringdrag {
-        border: 1px solid black;
-    }
-</style>
+<div class="configurator-container">
+    <div class="drag-container">
+        <div class="drag-area">
+            <h3>Components</h3>
+            <ul class="source-list draggable-list">
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>Kristina Zasiadko</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>Gabriel Wilson</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>Ronelle Cesicon</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>James Khosravi</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>Annika Hayden</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>Donald Horton</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>Kristina Zasiadko</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>Gabriel Wilson</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>Ronelle Cesicon</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>Kristina Zasiadko</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>Gabriel Wilson</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>Ronelle Cesicon</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>Kristina Zasiadko</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>Gabriel Wilson</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+                <li class="item" draggable="true">
+                    <div class="details">
+                        <span>Ronelle Cesicon</span>
+                    </div>
+                    <i class="uil uil-draggabledots"></i>
+                </li>
+            </ul>
+        </div>
+        <div class="drag-area">
+            <h3>Configuration</h3>
+            <ul class="target-list draggable-list">
 
-<MudGrid>
-    <MudItem xs="6">
-        <MudPaper Class="pa-16 ma-2" Outlined="true">
-            <MudDropContainer T="DropItem" Items="_items" ItemsSelector="@((item,dropzone) => item.Selector == dropzone)" ItemDropped="ItemUpdated" Class="d-flex flex-wrap flex-grow-1">
-                <ChildContent>
-                    @for (int i = 1; i <= 2; i++)
-                    {
-                        var dropzone = i.ToString();
-                        <MudPaper Class="ma-4 flex-grow-1">
-                            <MudList T="string" Class="d-flex flex-column mud-height-full">
-                                <MudListSubheader>Drop Zone @dropzone</MudListSubheader>
-                                <MudDropZone T="DropItem" Identifier="@dropzone" Class="flex-grow-1" />
-                            </MudList>
-                        </MudPaper>
-                    }
-                </ChildContent>
-                <ItemRenderer>
-                    <MudListItem  T="string" Text="@context.Name" />
-                </ItemRenderer>
-            </MudDropContainer>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="6">
-        <MudPaper Class="pa-16 ma-2" Outlined="true">
+            </ul>
+        </div>
+    </div>
+    <div class="preview-container">
+        <div class="preview-header">
+            <span>Preview</span>
+        </div>
+        <div class="preview">
             
-        </MudPaper>
-    </MudItem>
-</MudGrid>
-
-<script>
-    window.addEventListener("DOMContentLoaded", () => {
-        const dropZones = document.getElementsByClassName("mud-drop-zone");
-
-        Array.from(dropZones).forEach(dropZone => {
-            dropZone.addEventListener("dragover", (e) => {
-                e.preventDefault();
-                dropZone.classList.add("dragdrop");
-            });
-
-            dropZone.addEventListener("dragleave", () => {
-                dropZone.classList.remove("dragdrop");
-            });
-
-            dropZone.addEventListener("drop", () => {
-                dropZone.classList.remove("dragdrop");
-            });
-        });
-    });
-</script>
+        </div>
+    </div>
+</div>
 
 @code {
 
-    [Parameter]
-    public string Id { get; set; }
-    
+    private bool _initialized = false;
+
+    [Parameter] public string Id { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
+        {
+            _initialized = true;
+            await JSRuntime.InvokeVoidAsync("initDragDrop");
+        }
+    }
+
     private void ItemUpdated(MudItemDropInfo<DropItem> dropItem)
     {
         dropItem.Item.Selector = dropItem.DropzoneIdentifier;
@@ -82,4 +151,5 @@
         public string Name { get; init; }
         public string Selector { get; set; }
     }
+
 }

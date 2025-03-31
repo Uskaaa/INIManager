@@ -13,13 +13,17 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddRazorComponents()
-            .AddInteractiveServerComponents();
+            .AddInteractiveServerComponents().AddCircuitOptions(options =>
+            {
+                options.DetailedErrors = true;
+            });
         
         //Add Radzen and MudBlazor Service
         builder.Services.AddRadzenComponents();
         builder.Services.AddMudServices();
         
         builder.Services.AddScoped<ProtectedLocalStorage>();
+        
 
         var app = builder.Build();
 
