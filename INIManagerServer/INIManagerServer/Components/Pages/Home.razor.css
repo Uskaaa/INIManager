@@ -1,0 +1,14 @@
+﻿.home-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 10px;
+    gap: 50px;
+}
+
+.section-draft {
+    
+}
+
+.section-finished {
+    
+}

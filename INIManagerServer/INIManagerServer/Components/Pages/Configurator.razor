@@ -103,7 +103,7 @@
         <div class="drag-area">
             <h3>Configuration</h3>
             <ul class="target-list draggable-list">
-
+                
             </ul>
         </div>
     </div>
@@ -111,45 +111,29 @@
         <div class="preview-header">
             <span>Preview</span>
         </div>
-        <div class="preview">
+        <div class="preview-body">
             
         </div>
     </div>
 </div>
 
 @code {
-
-    private bool _initialized = false;
-
+    
     [Parameter] public string Id { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && !_initialized)
+        if (firstRender)
         {
-            _initialized = true;
             await JSRuntime.InvokeVoidAsync("initDragDrop");
         }
     }
-
-    private void ItemUpdated(MudItemDropInfo<DropItem> dropItem)
+    
+    protected override async Task OnInitializedAsync()
     {
-        dropItem.Item.Selector = dropItem.DropzoneIdentifier;
+        await base.OnInitializedAsync();
+        
+        
     }
-
-    private List<DropItem> _items = new()
-    {
-        new DropItem() { Name = "Item 1", Selector = "1" },
-        new DropItem() { Name = "Item 2", Selector = "1" },
-        new DropItem() { Name = "Item 3", Selector = "1" },
-        new DropItem() { Name = "Item 4", Selector = "2" },
-        new DropItem() { Name = "Item 5", Selector = "2" },
-    };
-
-    public class DropItem
-    {
-        public string Name { get; init; }
-        public string Selector { get; set; }
-    }
-
+    
 }

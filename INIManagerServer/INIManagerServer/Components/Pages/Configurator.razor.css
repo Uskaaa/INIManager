@@ -1,6 +1,6 @@
 ﻿.configurator-container {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     padding: 10px;
     gap: 50px;
 }
@@ -9,8 +9,8 @@
     justify-content: flex-start;
     display: flex;
     gap: 20px;
-    max-width: 50%;
     width: 100%;
+    overflow: hidden;
 }
 .drag-area {
     flex: 1;
@@ -27,10 +27,11 @@
     padding: 20px;
     background: #fff;
     border-radius: 7px;
-    max-height: 90vh;
+    max-height: 87vh;
+    min-height: 87vh;
     height: 100%;
     overflow-y: auto;
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ccc;
 }
 .draggable-list .item {
     list-style: none;
@@ -79,10 +80,16 @@
 .preview-container {
     display: flex;
     flex-direction: column;
-    max-width: 50%;
     width: 100%;
 }
 
 .preview-header {
     display: flex;
+    flex-direction: column;
+    border: 1px solid #ccc;
+}
+
+.preview-body {
+    flex: 1;
+    border: 1px solid #ccc;
 }
