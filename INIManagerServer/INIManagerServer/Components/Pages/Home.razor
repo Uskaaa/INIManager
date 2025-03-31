@@ -3,10 +3,12 @@
 @using DataGridEditMode = Radzen.DataGridEditMode
 @using Variant = Radzen.Variant
 @inject NavigationManager navigationManager
+@rendermode InteractiveServer
+<MudPopoverProvider />
 
 <div class="home-container">
     <div class="section-draft">
-        <MudTable Items="@workstations" FixedHeader="@fixed_header" FixedFooter="@fixed_footer" Height="@(fixed_header || fixed_footer ?"400px":"")">
+        <MudTable Items="@workstations" FixedHeader="@fixed_header" Hover="true" FixedFooter="@fixed_footer" Height="@(fixed_header || fixed_footer ?"400px":"")">
             <HeaderContent>
                 <MudTh>Id</MudTh>
                 <MudTh>Name</MudTh>
@@ -17,7 +19,7 @@
                 <MudTd DataLabel="Id">@context.Id</MudTd>
                 <MudTd DataLabel="Name">@context.Name</MudTd>
                 <MudTd DataLabel="Description">@context.Description</MudTd>
-                <MudTd><MudButton @onClick="() => EditConfiguration(@context.Id)">Edit</MudButton></MudTd>
+                <MudTd><RadzenButton Click=@(args => EditConfiguration(@context.Id)) Text="Edit" ButtonStyle="ButtonStyle.Light" /></MudTd>
             </RowTemplate>
             <PagerContent>
                 <MudTablePager PageSizeOptions="new int[]{50, 100}" />
@@ -46,9 +48,10 @@
         
     }
     
-    void EditConfiguration(int id)
+     void EditConfiguration(int id)
     {
         Console.WriteLine(id);
+        Task.Delay(100);
         navigationManager.NavigateTo($"/Configurator/{id}");
     }
 }
