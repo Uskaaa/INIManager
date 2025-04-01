@@ -1,126 +1,66 @@
 ﻿@page "/Configurator"
 @page "/Configurator/{Id}"
+@using INIManagerServer.Components.Models
 @rendermode InteractiveServer
 @inject IJSRuntime JSRuntime
 
 <div class="configurator-container">
+    <div class="drag-header">
+        <span>Configurator</span>
+    </div>
     <div class="drag-container">
         <div class="drag-area">
-            <h3>Components</h3>
             <ul class="source-list draggable-list">
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>Kristina Zasiadko</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>Gabriel Wilson</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>Ronelle Cesicon</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>James Khosravi</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>Annika Hayden</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>Donald Horton</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>Kristina Zasiadko</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>Gabriel Wilson</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>Ronelle Cesicon</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>Kristina Zasiadko</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>Gabriel Wilson</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>Ronelle Cesicon</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>Kristina Zasiadko</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>Gabriel Wilson</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
-                <li class="item" draggable="true">
-                    <div class="details">
-                        <span>Ronelle Cesicon</span>
-                    </div>
-                    <i class="uil uil-draggabledots"></i>
-                </li>
+                @foreach (var workstation in workstations)
+                {
+                    <li class="item" draggable="true">
+                        <div class="details">
+                            <span>@workstation.Name</span>
+                        </div>
+                        <i class="uil uil-draggabledots"></i>
+                    </li>
+                }
             </ul>
         </div>
         <div class="drag-area">
-            <h3>Configuration</h3>
             <ul class="target-list draggable-list">
-                
+            
             </ul>
         </div>
+
+    </div>
+    <div class="drag-footer">
+        <span>Configurator</span>
+    </div>
+    <div class="preview-header">
+        <span>Preview</span>
     </div>
     <div class="preview-container">
-        <div class="preview-header">
-            <span>Preview</span>
-        </div>
-        <div class="preview-body">
-            
-        </div>
+        <textarea type="text" class="preview-textarea preview"></textarea>
+    </div>
+    <div class="preview-footer">
+        <span>Preview</span>
     </div>
 </div>
 
 @code {
-    
-    [Parameter] public string Id { get; set; }
 
+    [Parameter] public string Id { get; set; }
+    
+    IEnumerable<Workstation> workstations = new List<Workstation>
+    {
+        new Workstation { Id = 1, Name = "Workstation 1", Description = "Description 1" },
+        new Workstation { Id = 2, Name = "Workstation 2", Description = "Description 2" },
+        new Workstation { Id = 3, Name = "Workstation 3", Description = "Description 3" },
+        new Workstation { Id = 4, Name = "Workstation 4", Description = "Description 4" },
+        new Workstation { Id = 5, Name = "Workstation 5", Description = "Description 5" },
+        new Workstation { Id = 6, Name = "Workstation 6", Description = "Description 6" },
+        new Workstation { Id = 7, Name = "Workstation 7", Description = "Description 7" },
+        new Workstation { Id = 8, Name = "Workstation 8", Description = "Description 8" },
+        new Workstation { Id = 9, Name = "Workstation 9", Description = "Description 9" },
+        new Workstation { Id = 10, Name = "Workstation 10", Description = "Description 10" },
+    }; 
+    
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -128,12 +68,14 @@
             await JSRuntime.InvokeVoidAsync("initDragDrop");
         }
     }
-    
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
         
         
     }
+    
+    //Filter for Workstations in .INI Preview ;
     
 }

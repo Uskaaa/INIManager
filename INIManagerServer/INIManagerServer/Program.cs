@@ -1,4 +1,5 @@
 using INIManagerServer.Components;
+using INIManagerServer.Components.Services;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using MudBlazor.Services;
 using Radzen;
@@ -23,6 +24,8 @@ public class Program
         builder.Services.AddMudServices();
         
         builder.Services.AddScoped<ProtectedLocalStorage>();
+        builder.Services.AddScoped<AdoService>();
+        builder.Services.AddScoped<ConfigurationService>();
         
 
         var app = builder.Build();

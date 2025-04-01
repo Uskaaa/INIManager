@@ -1,11 +1,7 @@
 window.initDragDrop = () => {
-    console.log("Initializing Drag & Drop...");
-
-    const sourceList = document.querySelector(".source-list");
     const targetList = document.querySelector(".target-list");
     const draggableLists = document.querySelectorAll(".draggable-list");
-
-// Funktion zum Initialisieren der Drag-Events für Items
+    
     function initDraggableItems(list) {
         const items = list.querySelectorAll(".item");
         items.forEach(item => {
@@ -17,12 +13,11 @@ window.initDragDrop = () => {
             });
         });
     }
-
-// Funktion zum Sortieren (nur im Ziel-Container)
+    
     function handleDragOver(e, list) {
         e.preventDefault();
         const draggingItem = document.querySelector(".dragging");
-        if (!draggingItem || list !== targetList) return; // Nur im Ziel-Container sortieren
+        if (!draggingItem || list !== targetList) return;
 
         const siblings = [...list.querySelectorAll(".item:not(.dragging)")];
         const nextSibling = siblings.find(sibling => {
@@ -30,8 +25,7 @@ window.initDragDrop = () => {
         });
         list.insertBefore(draggingItem, nextSibling);
     }
-
-// Funktion zum Verschieben zwischen Containern
+    
     function handleDrop(e, target) {
         e.preventDefault();
         const draggingItem = document.querySelector(".dragging");
@@ -40,11 +34,10 @@ window.initDragDrop = () => {
         const sourceContainer = draggingItem.parentNode;
         if (sourceContainer !== target) {
             target.appendChild(draggingItem);
-            initDraggableItems(target); // Neue Items im Ziel-Container draggable machen
+            initDraggableItems(target);
         }
     }
-
-// Event-Listener für beide Listen
+    
     draggableLists.forEach(list => {
         initDraggableItems(list);
 

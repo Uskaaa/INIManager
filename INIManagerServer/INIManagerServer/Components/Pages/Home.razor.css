@@ -1,8 +1,10 @@
 ﻿.home-container {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 50% 50%;
+    grid-template-areas:
+        "section-draft"
+        "section-finished";
     padding: 10px;
-    gap: 50px;
 }
 
 .section-draft {
