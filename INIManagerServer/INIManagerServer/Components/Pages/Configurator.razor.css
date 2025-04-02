@@ -5,12 +5,12 @@
         "drag-container preview-container"
         "drag-footer preview-footer";
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto 1fr auto;
-    max-height: 100vh;
+    grid-template-rows: 50px calc(100vh - 160px) 50px;
     height: 100vh;
     margin: 10px;
     gap: 20px;
     overflow: hidden;
+    box-sizing: border-box;
 }
 
 .drag-header {
@@ -21,6 +21,7 @@
     border: 1px solid #ccc;
     z-index: 2;
     height: 50px;
+    box-sizing: border-box;
 }
 
 .drag-container {
@@ -32,6 +33,7 @@
     border: 1px solid #ccc;
     position: relative;
     height: 100%;
+    box-sizing: border-box;
 }
 .drag-area {
     flex: 1;
@@ -103,6 +105,7 @@
     border: 1px solid #ccc;
     z-index: 1;
     height: 50px;
+    box-sizing: border-box;
 }
 
 .preview-header {
@@ -113,15 +116,16 @@
     border: 1px solid #ccc;
     z-index: 2;
     height: 50px;
+    box-sizing: border-box;
 }
 
 .preview-container {
     grid-area: preview-container;
-    border: 1px solid #ccc;
     height: 100%;
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
+    box-sizing: border-box;
 }
 
 .preview-textarea {
@@ -146,4 +150,5 @@
     border: 1px solid #ccc;
     z-index: 1;
     height: 50px;
+    box-sizing: border-box;
 }
