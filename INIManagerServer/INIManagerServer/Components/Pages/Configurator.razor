@@ -1,8 +1,10 @@
 ﻿@page "/Configurator"
 @page "/Configurator/{Id}"
 @using INIManagerServer.Components.Models
+@using INIManagerServer.Components.Services
 @rendermode InteractiveServer
 @inject IJSRuntime JSRuntime
+@inject ConfigurationService _configurationService
 
 <div class="configurator-container">
     <div class="drag-header">
@@ -45,7 +47,10 @@
 
 @code {
 
-    [Parameter] public string Id { get; set; }
+    [Parameter] public int Id { get; set; }
+
+    private Configuration _configuration = new();
+    private List<Workstation> _workstationss = [];
     
     IEnumerable<Workstation> workstations = new List<Workstation>
     {
@@ -65,14 +70,17 @@
     {
         if (firstRender)
         {
-            await JSRuntime.InvokeVoidAsync("initDragDrop");
+            await JSRuntime.InvokeVoidAsync("initDragDrop", _configuration);
         }
     }
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        
-        
+
+        if (Id != null || Id != 0)
+        {
+            _configuration = await _configurationService.ReadConfigurationById(Id);
+        }
     }
 }

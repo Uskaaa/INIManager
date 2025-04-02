@@ -40,38 +40,4 @@ public class DbManager
         await command.ExecuteNonQueryAsync();
         await _dbConnector.CloseConnectionAsync();
     }
-
-    // Beispiel: Alle Items abrufen
-    public async Task<List<DropItem>> GetAllItemsAsync()
-    {
-        var items = new List<DropItem>();
-        await _dbConnector.OpenConnectionAsync();
-        using var command = new MySqlCommand("SELECT id, name, zone_id FROM items;", _dbConnector.GetConnection());
-        using var reader = await command.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            items.Add(new DropItem
-            {
-                Name = reader.GetString("name"),
-                Selector = reader.GetString("selector")
-            });
-        }
-        await _dbConnector.CloseConnectionAsync();
-        return items;
-    }
-    
-    public async Task<bool> TestConnectionAsync()
-    {
-        try
-        {
-            await _dbConnector.OpenConnectionAsync();
-            await _dbConnector.CloseConnectionAsync();
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Connection failed: {ex.Message}");
-            return false;
-        }
-    }
 }

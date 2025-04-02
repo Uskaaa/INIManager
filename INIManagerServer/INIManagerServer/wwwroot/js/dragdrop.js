@@ -1,4 +1,6 @@
-window.initDragDrop = () => {
+window.initDragDrop = (configJson) => {
+    const configuration = configJson;
+    
     const targetList = document.querySelector(".target-list");
     const draggableLists = document.querySelectorAll(".draggable-list");
     const previewTextarea = document.querySelector(".preview");
@@ -65,6 +67,10 @@ window.initDragDrop = () => {
         updatePreview();
     }
 
+    DotNet.invokeMethodAsync('INIManagerServer', 'SendModelsToJs').then((data) => {
+        console.log(data);
+    })
+    
     draggableLists.forEach(list => {
         initDraggableItems(list);
 

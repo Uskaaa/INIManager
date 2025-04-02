@@ -1,6 +1,148 @@
-﻿namespace INIManagerServer.Components.Services;
+﻿using INIManagerServer.Components.Database;
+using INIManagerServer.Components.Models;
+using MySqlConnector;
+
+namespace INIManagerServer.Components.Services;
 
 public class ConfigurationService
 {
-    
+    private readonly DbConnector _dbConnector;
+
+    public ConfigurationService(DbConnector dbConnector)
+    {
+        _dbConnector = dbConnector;
+    }
+
+    public async Task<bool> CreateConfiguration(Configuration configuration)
+    {
+        try
+        {
+            await _dbConnector.OpenConnectionAsync();
+            using var command = new MySqlCommand(
+                "INSERT INTO configuration (id, name, dateOfCreation, isDraft) VALUES (@id, @name, @dateOfCreation, @isDraft) ",
+                _dbConnector.GetConnection());
+            command.Parameters.AddWithValue("@id", configuration.Id);
+            command.Parameters.AddWithValue("@name", configuration.Name);
+            command.Parameters.AddWithValue("@dateOfCreation", configuration.DateOfCreation);
+            command.Parameters.AddWithValue("@isDraft", configuration.IsDraft);
+            await command.ExecuteNonQueryAsync();
+            await _dbConnector.CloseConnectionAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return false;
+        }
+
+        Console.WriteLine("Erstellt!");
+        return true;
+    }
+
+    public async Task<List<Configuration>> ReadConfiguration()
+    {
+        var configurations = new List<Configuration>();
+
+        await _dbConnector.OpenConnectionAsync();
+        await using (var command =
+                     new MySqlCommand(
+                         "SELECT id, name, dateOfCreation, isDraft " +
+                         "FROM configuration;",
+                         _dbConnector.GetConnection()))
+        {
+            await using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var workstations = new List<Workstation>();
+                await using (var command2 = new MySqlCommand(
+                                 "SELECT workstation.id, workstation.name, workstation.description FROM configws " +
+                                 "INNER JOIN workstation ON workstation.id = configws.workstationid " +
+                                 "WHERE configws.configurationid = @configId;",
+                                 _dbConnector.GetConnection()))
+                {
+                    command2.Parameters.AddWithValue("@configId", reader.GetInt32("id"));
+                    await using var reader2 = await command2.ExecuteReaderAsync();
+                    while (await reader2.ReadAsync())
+                    {
+                        workstations.Add(new Workstation
+                        {
+                            Id = reader.GetInt32("id"),
+                            Name = reader.GetString("name"),
+                            Description = reader.GetString("description"),
+                        });
+                    }
+                }
+
+                configurations.Add(new Configuration
+                {
+                    Id = reader.GetInt32("id"),
+                    Name = reader.GetString("name"),
+                    Workstations = workstations,
+                    DateOfCreation = reader.GetString("dateOfCreation"),
+                    IsDraft = reader.GetBoolean("isDraft")
+                });
+            }
+
+            await _dbConnector.CloseConnectionAsync();
+        }
+
+        return configurations;
+    }
+
+    public async Task<Configuration> ReadConfigurationById(int id)
+    {
+        var configuration = new Configuration();
+
+        await _dbConnector.OpenConnectionAsync();
+        await using (var command =
+                     new MySqlCommand(
+                         "SELECT id, name, dateOfCreation, isDraft " +
+                         "FROM configuration;" +
+                         "WHERE id = @configId",
+                         _dbConnector.GetConnection()))
+        {
+            command.Parameters.AddWithValue("configId", id);
+            await using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var workstations = new List<Workstation>();
+                await using (var command2 = new MySqlCommand(
+                                 "SELECT workstation.id, workstation.name, workstation.description FROM configws " +
+                                 "INNER JOIN workstation ON workstation.id = configws.workstationid " +
+                                 "WHERE configws.configurationid = @configId;",
+                                 _dbConnector.GetConnection()))
+                {
+                    command2.Parameters.AddWithValue("@configId", reader.GetInt32("id"));
+                    await using var reader2 = await command2.ExecuteReaderAsync();
+                    while (await reader2.ReadAsync())
+                    {
+                        workstations.Add(new Workstation
+                        {
+                            Id = reader.GetInt32("id"),
+                            Name = reader.GetString("name"),
+                            Description = reader.GetString("description"),
+                        });
+                    }
+                }
+
+                configuration = (new Configuration
+                {
+                    Id = reader.GetInt32("id"),
+                    Name = reader.GetString("name"),
+                    Workstations = workstations,
+                    DateOfCreation = reader.GetString("dateOfCreation"),
+                    IsDraft = reader.GetBoolean("isDraft")
+                });
+            }
+
+            await _dbConnector.CloseConnectionAsync();
+        }
+
+        return configuration;
+    }
+
+    public async Task<bool> UpdateConfiguration(Configuration configuration)
+    {
+        
+        return true;
+    }
 }
