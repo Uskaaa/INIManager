@@ -1,10 +1,11 @@
 ﻿using INIManagerServer.Components.Database;
 using INIManagerServer.Components.Models;
+using INIManagerServer.Components.Services.Interfaces;
 using MySqlConnector;
 
 namespace INIManagerServer.Components.Services;
 
-public class ConfigurationService
+public class ConfigurationService : IConfigurationService
 {
     private readonly DbConnector _dbConnector;
 
@@ -19,10 +20,10 @@ public class ConfigurationService
         {
             await _dbConnector.OpenConnectionAsync();
             using var command = new MySqlCommand(
-                "INSERT INTO configuration (id, name, dateOfCreation, isDraft) VALUES (@id, @name, @dateOfCreation, @isDraft) ",
+                "INSERT INTO configuration (id, bezeichnung, dateOfCreation, isDraft) VALUES (@id, @name, @dateOfCreation, @isDraft) ",
                 _dbConnector.GetConnection());
             command.Parameters.AddWithValue("@id", configuration.Id);
-            command.Parameters.AddWithValue("@name", configuration.Name);
+            command.Parameters.AddWithValue("@bezeichnung", configuration.Bezeichnung);
             command.Parameters.AddWithValue("@dateOfCreation", configuration.DateOfCreation);
             command.Parameters.AddWithValue("@isDraft", configuration.IsDraft);
             await command.ExecuteNonQueryAsync();
@@ -54,7 +55,7 @@ public class ConfigurationService
             {
                 var workstations = new List<Workstation>();
                 await using (var command2 = new MySqlCommand(
-                                 "SELECT workstation.id, workstation.name, workstation.description FROM configws " +
+                                 "SELECT workstation.id, workstation.bezeichnung, workstation.description FROM configws " +
                                  "INNER JOIN workstation ON workstation.id = configws.workstationid " +
                                  "WHERE configws.configurationid = @configId;",
                                  _dbConnector.GetConnection()))
@@ -75,7 +76,7 @@ public class ConfigurationService
                 configurations.Add(new Configuration
                 {
                     Id = reader.GetInt32("id"),
-                    Name = reader.GetString("name"),
+                    Bezeichnung = reader.GetString("bezeichnung"),
                     Workstations = workstations,
                     DateOfCreation = reader.GetString("dateOfCreation"),
                     IsDraft = reader.GetBoolean("isDraft")
@@ -127,7 +128,7 @@ public class ConfigurationService
                 configuration = (new Configuration
                 {
                     Id = reader.GetInt32("id"),
-                    Name = reader.GetString("name"),
+                    Bezeichnung = reader.GetString("name"),
                     Workstations = workstations,
                     DateOfCreation = reader.GetString("dateOfCreation"),
                     IsDraft = reader.GetBoolean("isDraft")
@@ -143,6 +144,11 @@ public class ConfigurationService
     public async Task<bool> UpdateConfiguration(Configuration configuration)
     {
         
+        return true;
+    }
+
+    public async Task<bool> DeleteConfiguration(int id)
+    {
         return true;
     }
 }
