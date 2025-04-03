@@ -15,6 +15,10 @@
 
 .drag-header {
     grid-area: drag-header;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
     position: sticky;
     top: 0;
     padding: 10px;
@@ -110,6 +114,10 @@
 
 .preview-header {
     grid-area: preview-header;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
     position: sticky;
     top: 0;
     padding: 10px;
@@ -144,6 +152,10 @@
 
 .preview-footer {
     grid-area: preview-footer;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
     position: relative;
     bottom: 0;
     padding: 10px;
@@ -151,4 +163,12 @@
     z-index: 1;
     height: 50px;
     box-sizing: border-box;
+}
+
+.draft {
+    grid-area: preview-footer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: auto;
 }

@@ -1,5 +1,6 @@
-window.initDragDrop = (configJson) => {
-    const configuration = configJson;
+window.initDragDrop = (configurationJson, workstationsJson) => {
+    const configuration = configurationJson;
+    const workstations = workstationsJson;
     
     const targetList = document.querySelector(".target-list");
     const draggableLists = document.querySelectorAll(".draggable-list");

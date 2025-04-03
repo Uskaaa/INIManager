@@ -1,4 +1,9 @@
-﻿<aside class="sidebar">
+﻿@using INIManagerServer.Components.Models
+@using INIManagerServer.Components.Services
+@inject ConfigurationDraftService _configurationDraftService
+@inject NavigationManager _navigationManager
+
+<aside class="sidebar">
     <!-- Sidebar header -->
     <header class="sidebar-header">
         <a href="/" class="header-logo">
@@ -17,7 +22,7 @@
                 <span class="nav-tooltip">Home</span>
             </li>
             <li class="nav-item">
-                <a href="Configurator" class="nav-link">
+                <a @onclick="() => NavigateToConfigurator()" class="nav-link">
                     <span class="nav-icon material-symbols-rounded">insert_chart</span>
                     <span class="nav-label">Configurator</span>
                 </a>
@@ -50,3 +55,32 @@
         @* </ul> *@
     </nav>
 </aside>
+
+@code {
+    private int _id;
+    Configuration _configuration = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+    
+    async Task NavigateToConfigurator()
+    {
+        do
+        {
+            do
+            {
+                _id = Random.Shared.Next(1, 1000);
+            } while ((await _configurationDraftService.ReadConfigurationById(_id)).Id == _id);
+
+            var result = await _configurationDraftService.CreateConfiguration(_id);
+
+            if (result)
+            {
+                _navigationManager.NavigateTo($"Configurator/{_id}");
+                break;
+            }
+        } while (true);
+    }
+}

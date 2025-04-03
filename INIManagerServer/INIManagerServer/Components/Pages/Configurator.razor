@@ -1,10 +1,18 @@
 ﻿@page "/Configurator"
 @page "/Configurator/{Id}"
+@using System.Reflection.Metadata
 @using INIManagerServer.Components.Models
 @using INIManagerServer.Components.Services
+@using INIManagerServer.Components.Services.Interfaces
+@using Colors = MudBlazor.Colors
+@using Variant = Radzen.Variant
 @rendermode InteractiveServer
 @inject IJSRuntime JSRuntime
-@inject ConfigurationService _configurationService
+@inject IConfigurationService _configurationService
+@inject WorkstationService _workstationService
+@inject NotificationService NotificationService
+
+<MudPopoverProvider />
 
 <div class="configurator-container">
     <div class="drag-header">
@@ -16,7 +24,7 @@
     <div class="drag-container">
         <div class="drag-area">
             <ul class="source-list draggable-list">
-                @foreach (var workstation in workstations)
+                @foreach (var workstation in _workstations)
                 {
                     <li class="item" draggable="true">
                         <div class="details">
@@ -29,7 +37,7 @@
         </div>
         <div class="drag-area">
             <ul class="target-list draggable-list">
-            
+
             </ul>
         </div>
 
@@ -38,42 +46,48 @@
         <span>Configurator</span>
     </div>
     <div class="preview-header">
-        <span>Preview</span>
+        <MudTooltip Text="..." Arrow="true" Placement="Placement.Left">
+            <RadzenButton Icon="lightbulb" ButtonStyle="ButtonStyle.Info"/>
+        </MudTooltip>
     </div>
     <div class="preview-container">
         <textarea type="text" class="preview-textarea preview"></textarea>
     </div>
     <div class="preview-footer">
-        <span>Preview</span>
+        <div class="draft">
+            <MudProgressCircular Size="Size.Small" Style="color: #151A2D;" Indeterminate="true"/>
+            <RadzenBadge Style="color: black;" Variant="Variant.Text" Text="@_autoSave"/>
+        </div>
+        <MudButton Disabled="_autoSaved" OnClick="() => SaveDraft()" Variant="MudBlazor.Variant.Filled"
+                   Style="@($"background-color:{Colors.BlueGray.Darken1}; color: white;")">Save as draft
+        </MudButton>
+        <MudButton OnClick="() => Save()" Variant="MudBlazor.Variant.Filled"
+                   Style="@($"background-color:{Colors.BlueGray.Darken1}; color: white;")">Save
+        </MudButton>
+        <MudButton OnClick="() => Export()" Variant="MudBlazor.Variant.Filled" StartIcon="@Icons.Material.Filled.Save"
+                   Style="background-color: #151A2D; color: white;">Export
+        </MudButton>
     </div>
 </div>
 
 @code {
 
-    [Parameter] public int Id { get; set; }
+    [Parameter]
+    public string Id { get; set; }
+    
+    private bool _busy;
+    private string _configurationName = "";
+    private string _autoSave = "Saving Draft...";
+    private bool _autoSaved = false;
 
     private Configuration _configuration = new();
-    private List<Workstation> _workstationss = [];
-    
-    IEnumerable<Workstation> workstations = new List<Workstation>
-    {
-        new() { Id = 1, Name = "Workstation 1", Description = "Description 1" },
-        new() { Id = 2, Name = "Workstation 2", Description = "Description 2" },
-        new() { Id = 3, Name = "Workstation 3", Description = "Description 3" },
-        new() { Id = 4, Name = "Workstation 4", Description = "Description 4" },
-        new() { Id = 5, Name = "Workstation 5", Description = "Description 5" },
-        new() { Id = 6, Name = "Workstation 6", Description = "Description 6" },
-        new() { Id = 7, Name = "Workstation 7", Description = "Description 7" },
-        new() { Id = 8, Name = "Workstation 8", Description = "Description 8" },
-        new() { Id = 9, Name = "Workstation 9", Description = "Description 9" },
-        new() { Id = 10, Name = "Workstation 10", Description = "Description 10" },
-    }; 
-    
+    private List<Workstation> _workstations = [];
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await JSRuntime.InvokeVoidAsync("initDragDrop", _configuration);
+            await JSRuntime.InvokeVoidAsync("initDragDrop", _configuration, _workstations);
         }
     }
 
@@ -81,11 +95,28 @@
     {
         await base.OnInitializedAsync();
 
-        if (Id != null || Id != 0)
-        {
-            _configuration = await _configurationService.ReadConfigurationById(Id);
-        }
+        _workstations = await _workstationService.ReadWorkstation();
+
+        // if (Convert.ToInt32(Id) != 0)
+        // {
+        //     _configuration = await _configurationService.ReadConfigurationById(Convert.ToInt32(Id));
+        // }
     }
-    
-    
+
+    private void OnClick(string text)
+    {
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "Button Clicked", Detail = text });
+    }
+
+    void Save()
+    {
+    }
+
+    void SaveDraft()
+    {
+    }
+
+    void Export()
+    {
+    }
 }

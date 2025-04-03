@@ -5,11 +5,11 @@ using MySqlConnector;
 
 namespace INIManagerServer.Components.Services;
 
-public class ConfigurationService : IConfigurationService
+public class ConfigurationDraftService : IConfigurationService
 {
     private readonly DbConnector _dbConnector;
 
-    public ConfigurationService(DbConnector dbConnector)
+    public ConfigurationDraftService(DbConnector dbConnector)
     {
         _dbConnector = dbConnector;
     }
@@ -20,11 +20,33 @@ public class ConfigurationService : IConfigurationService
         {
             await _dbConnector.OpenConnectionAsync();
             using var command = new MySqlCommand(
-                "INSERT INTO configuration (id, bezeichnung, timestamp) VALUES (@id, @name, @timestamp) ",
+                "INSERT INTO configuration_draft (id, bezeichnung, timestamp) VALUES (@id, @name, @timestamp) ",
                 _dbConnector.GetConnection());
             command.Parameters.AddWithValue("@id", configuration.Id);
             command.Parameters.AddWithValue("@bezeichnung", configuration.Bezeichnung);
             command.Parameters.AddWithValue("@timestamp", configuration.Timestamp);
+            await command.ExecuteNonQueryAsync();
+            await _dbConnector.CloseConnectionAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return false;
+        }
+
+        Console.WriteLine("Erstellt!");
+        return true;
+    }
+    
+    public async Task<bool> CreateConfiguration(int id)
+    {
+        try
+        {
+            await _dbConnector.OpenConnectionAsync();
+            using var command = new MySqlCommand(
+                "INSERT INTO configuration_draft (id) VALUES (@id) ",
+                _dbConnector.GetConnection());
+            command.Parameters.AddWithValue("@id", id);
             await command.ExecuteNonQueryAsync();
             await _dbConnector.CloseConnectionAsync();
         }
@@ -56,7 +78,7 @@ public class ConfigurationService : IConfigurationService
                 await using (var command2 = new MySqlCommand(
                                  "SELECT workstation.id, workstation.bezeichnung, workstation.description FROM configws " +
                                  "INNER JOIN workstation ON workstation.id = configws.workstationid " +
-                                 "WHERE configws.configurationid = @configId;",
+                                 "WHERE configws.configuration_draftid = @configId;",
                                  _dbConnector.GetConnection()))
                 {
                     command2.Parameters.AddWithValue("@configId", reader.GetInt32("id"));
@@ -95,7 +117,7 @@ public class ConfigurationService : IConfigurationService
         await using (var command =
                      new MySqlCommand(
                          "SELECT id, bezeichnung, timestamp " +
-                         "FROM configuration" +
+                         "FROM configuration_draft " +
                          "WHERE id = @configId;",
                          _dbConnector.GetConnection()))
         {
@@ -107,7 +129,7 @@ public class ConfigurationService : IConfigurationService
                 await using (var command2 = new MySqlCommand(
                                  "SELECT workstation.id, workstation.name, workstation.description FROM configws " +
                                  "INNER JOIN workstation ON workstation.id = configws.workstationid " +
-                                 "WHERE configws.configurationid = @configId;",
+                                 "WHERE configws.configuration_draftid = @configId;",
                                  _dbConnector.GetConnection()))
                 {
                     command2.Parameters.AddWithValue("@configId", reader.GetInt32("id"));

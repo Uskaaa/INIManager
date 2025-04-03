@@ -1,6 +1,7 @@
 using INIManagerServer.Components;
 using INIManagerServer.Components.Database;
 using INIManagerServer.Components.Services;
+using INIManagerServer.Components.Services.Interfaces;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using MudBlazor.Services;
 using Radzen;
@@ -27,9 +28,13 @@ public class Program
         string connectionString = "Server=localhost;Port=3306;Database=inimanager_db;Uid=root;Pwd=;";
         builder.Services.AddSingleton(new DbConnector(connectionString));
         builder.Services.AddSingleton<DbManager>();
+        
         builder.Services.AddScoped<ProtectedLocalStorage>();
+        
         builder.Services.AddScoped<AdoService>();
-        builder.Services.AddScoped<ConfigurationService>();
+        builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
+        builder.Services.AddScoped<WorkstationService>();
+        builder.Services.AddScoped<ConfigurationDraftService>();
         
 
         var app = builder.Build();
