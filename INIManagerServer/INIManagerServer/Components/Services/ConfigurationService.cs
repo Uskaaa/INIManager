@@ -20,7 +20,7 @@ public class ConfigurationService : IConfigurationService
         {
             await _dbConnector.OpenConnectionAsync();
             using var command = new MySqlCommand(
-                "INSERT INTO configuration (id, bezeichnung, timestamp) VALUES (@id, @name, @timestamp) ",
+                "INSERT INTO configuration (id, bezeichnung, timestamp) VALUES (@id, @name, @timestamp);",
                 _dbConnector.GetConnection());
             command.Parameters.AddWithValue("@id", configuration.Id);
             command.Parameters.AddWithValue("@bezeichnung", configuration.Bezeichnung);
@@ -65,9 +65,9 @@ public class ConfigurationService : IConfigurationService
                     {
                         workstations.Add(new Workstation
                         {
-                            Id = reader.GetInt32("id"),
-                            Name = reader.GetString("name"),
-                            Description = reader.GetString("description"),
+                            Id = reader2.GetInt32("id"),
+                            Name = reader2.GetString("name"),
+                            Description = reader2.GetString("description"),
                         });
                     }
                 }
@@ -95,7 +95,7 @@ public class ConfigurationService : IConfigurationService
         await using (var command =
                      new MySqlCommand(
                          "SELECT id, bezeichnung, timestamp " +
-                         "FROM configuration" +
+                         "FROM configuration " +
                          "WHERE id = @configId;",
                          _dbConnector.GetConnection()))
         {
@@ -116,9 +116,9 @@ public class ConfigurationService : IConfigurationService
                     {
                         workstations.Add(new Workstation
                         {
-                            Id = reader.GetInt32("id"),
-                            Name = reader.GetString("name"),
-                            Description = reader.GetString("description"),
+                            Id = reader2.GetInt32("id"),
+                            Name = reader2.GetString("name"),
+                            Description = reader2.GetString("description"),
                         });
                     }
                 }

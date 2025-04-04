@@ -3,6 +3,7 @@ using INIManagerServer.Components.Database;
 using INIManagerServer.Components.Services;
 using INIManagerServer.Components.Services.Interfaces;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using MudBlazor.Services;
 using Radzen;
 
@@ -35,6 +36,7 @@ public class Program
         builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
         builder.Services.AddScoped<WorkstationService>();
         builder.Services.AddScoped<ConfigurationDraftService>();
+        
         
 
         var app = builder.Build();

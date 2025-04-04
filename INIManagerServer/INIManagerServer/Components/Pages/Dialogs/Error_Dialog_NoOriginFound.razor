@@ -1,0 +1,22 @@
+﻿@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<MudDialog>
+    <DialogContent>
+        Please go back and try again!
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Default" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    private void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+        NavigationManager.NavigateTo("/");
+    }
+
+}

@@ -1,18 +1,24 @@
 ﻿@page "/Configurator"
 @page "/Configurator/{Id}"
-@using System.Reflection.Metadata
+@using System.Timers
 @using INIManagerServer.Components.Models
+@using INIManagerServer.Components.Pages.Dialogs
 @using INIManagerServer.Components.Services
 @using INIManagerServer.Components.Services.Interfaces
 @using Colors = MudBlazor.Colors
+@using DialogOptions = MudBlazor.DialogOptions
 @using Variant = Radzen.Variant
 @rendermode InteractiveServer
-@inject IJSRuntime JSRuntime
-@inject IConfigurationService _configurationService
-@inject WorkstationService _workstationService
+@inject IJSRuntime JsRuntime
+@inject IConfigurationService ConfigurationService
+@inject ConfigurationDraftService ConfigurationDraftService
+@inject WorkstationService WorkstationService
 @inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
 
-<MudPopoverProvider />
+<MudPopoverProvider/>
+<MudDialogProvider />
 
 <div class="configurator-container">
     <div class="drag-header">
@@ -55,13 +61,20 @@
     </div>
     <div class="preview-footer">
         <div class="draft">
-            <MudProgressCircular Size="Size.Small" Style="color: #151A2D;" Indeterminate="true"/>
+            @if (_autoSaved)
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Default" />
+            }
+            else
+            {
+                <MudProgressCircular Size="Size.Small" Style="color: #151A2D;" Indeterminate="true"/>
+            }
             <RadzenBadge Style="color: black;" Variant="Variant.Text" Text="@_autoSave"/>
         </div>
         <MudButton Disabled="_autoSaved" OnClick="() => SaveDraft()" Variant="MudBlazor.Variant.Filled"
                    Style="@($"background-color:{Colors.BlueGray.Darken1}; color: white;")">Save as draft
         </MudButton>
-        <MudButton OnClick="() => Save()" Variant="MudBlazor.Variant.Filled"
+        <MudButton OnClick="() => OpenSave_Dialog_Async()" Variant="MudBlazor.Variant.Filled"
                    Style="@($"background-color:{Colors.BlueGray.Darken1}; color: white;")">Save
         </MudButton>
         <MudButton OnClick="() => Export()" Variant="MudBlazor.Variant.Filled" StartIcon="@Icons.Material.Filled.Save"
@@ -70,16 +83,21 @@
     </div>
 </div>
 
+<style>
+    .my-custom-class {
+        backdrop-filter: blur(10px);
+    }
+</style>
+
+
 @code {
-
-    [Parameter]
-    public string Id { get; set; }
+    [Parameter] public string Id { get; set; }
     
-    private bool _busy;
     private string _configurationName = "";
-    private string _autoSave = "Saving Draft...";
-    private bool _autoSaved = false;
-
+    private string _autoSave = "Draft saved!";
+    private bool _autoSaved = true;
+    private System.Threading.Timer _timer;
+    
     private Configuration _configuration = new();
     private List<Workstation> _workstations = [];
 
@@ -87,7 +105,7 @@
     {
         if (firstRender)
         {
-            await JSRuntime.InvokeVoidAsync("initDragDrop", _configuration, _workstations);
+            await JsRuntime.InvokeVoidAsync("initDragDrop", _configuration, _workstations);
         }
     }
 
@@ -95,28 +113,72 @@
     {
         await base.OnInitializedAsync();
 
-        _workstations = await _workstationService.ReadWorkstation();
+        var uri = new Uri(NavigationManager.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        var value = query.GetValueOrDefault("from");
 
-        // if (Convert.ToInt32(Id) != 0)
-        // {
-        //     _configuration = await _configurationService.ReadConfigurationById(Convert.ToInt32(Id));
-        // }
+        if (value == "NavMenu")
+        {
+            _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
+            _configuration.Type = TypeOfConfiguration.Draft;
+        }
+        else if (value == "Home")
+        {
+            _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id)); 
+            _configuration.Type = TypeOfConfiguration.Active;
+        }
+        else await OpenError_Dialog_NoOriginFound_Async();
+        
+        _workstations = await WorkstationService.ReadWorkstation();
     }
 
-    private void OnClick(string text)
+    private async Task OnUserInteraction()
     {
-        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "Button Clicked", Detail = text });
+        _timer.Dispose();
+        _autoSave = "Saving draft...";
+        _autoSaved = false;
+        _timer = new System.Threading.Timer(_ => SaveDraft(), null, 5000, Timeout.Infinite);
     }
 
+    async void AutoSave()
+    {
+        bool result = false;
+        if (_configuration.Type == TypeOfConfiguration.Draft) result = await ConfigurationDraftService.UpdateConfiguration(_configuration);
+        else if (_configuration.Type == TypeOfConfiguration.Active) result = await ConfigurationService.UpdateConfiguration(_configuration);
+
+        if (result)
+        {
+            _autoSave = "Draft saved!";
+            _autoSaved = true;
+        }
+    }
+    
+    async void SaveDraft()
+    {
+        
+    }
+    
     void Save()
     {
     }
-
-    void SaveDraft()
+    
+    void Export()
     {
     }
 
-    void Export()
+    private Task OpenError_Dialog_NoOriginFound_Async()
     {
+        var options = new DialogOptions { BackgroundClass = "my-custom-class" };
+
+        return DialogService.ShowAsync<Error_Dialog_NoOriginFound>("No origin was found", options);
+    }
+    
+    private Task OpenSave_Dialog_Async()
+    {
+        var options = new DialogOptions { BackgroundClass = "my-custom-class" };
+
+        
+
+        return DialogService.ShowAsync<Save_Dialog>("Save", options);
     }
 }

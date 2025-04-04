@@ -78,7 +78,7 @@ public class ConfigurationDraftService : IConfigurationService
                 await using (var command2 = new MySqlCommand(
                                  "SELECT workstation.id, workstation.bezeichnung, workstation.description FROM configws " +
                                  "INNER JOIN workstation ON workstation.id = configws.workstationid " +
-                                 "WHERE configws.configuration_draftid = @configId;",
+                                 "WHERE configws.configurationdraftid = @configId;",
                                  _dbConnector.GetConnection()))
                 {
                     command2.Parameters.AddWithValue("@configId", reader.GetInt32("id"));
@@ -87,19 +87,23 @@ public class ConfigurationDraftService : IConfigurationService
                     {
                         workstations.Add(new Workstation
                         {
-                            Id = reader.GetInt32("id"),
-                            Name = reader.GetString("name"),
-                            Description = reader.GetString("description"),
+                            Id = reader2.GetInt32("id"),
+                            Name = reader2.GetString("name"),
+                            Description = reader2.GetString("description"),
                         });
                     }
                 }
-
+                
                 configurations.Add(new Configuration
                 {
                     Id = reader.GetInt32("id"),
-                    Bezeichnung = reader.GetString("bezeichnung"),
+                    Bezeichnung = reader.IsDBNull(reader.GetOrdinal("bezeichnung")) 
+                        ? string.Empty 
+                        : reader.GetString("bezeichnung"),
                     Workstations = workstations,
-                    Timestamp = reader.GetString("dateOfCreation")
+                    Timestamp = reader.IsDBNull(reader.GetOrdinal("timestamp")) 
+                        ? string.Empty 
+                        : reader.GetString("timestamp")
                 });
             }
 
@@ -114,8 +118,9 @@ public class ConfigurationDraftService : IConfigurationService
         var configuration = new Configuration();
 
         await _dbConnector.OpenConnectionAsync();
-        await using (var command =
-                     new MySqlCommand(
+        Console.WriteLine($"Connection State: {_dbConnector.GetConnection().State}");
+
+        await using (var command = new MySqlCommand(
                          "SELECT id, bezeichnung, timestamp " +
                          "FROM configuration_draft " +
                          "WHERE id = @configId;",
@@ -123,37 +128,44 @@ public class ConfigurationDraftService : IConfigurationService
         {
             command.Parameters.AddWithValue("@configId", id);
             await using var reader = await command.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                var workstations = new List<Workstation>();
-                await using (var command2 = new MySqlCommand(
-                                 "SELECT workstation.id, workstation.name, workstation.description FROM configws " +
-                                 "INNER JOIN workstation ON workstation.id = configws.workstationid " +
-                                 "WHERE configws.configuration_draftid = @configId;",
-                                 _dbConnector.GetConnection()))
-                {
-                    command2.Parameters.AddWithValue("@configId", reader.GetInt32("id"));
-                    await using var reader2 = await command2.ExecuteReaderAsync();
-                    while (await reader2.ReadAsync())
-                    {
-                        workstations.Add(new Workstation
-                        {
-                            Id = reader.GetInt32("id"),
-                            Name = reader.GetString("name"),
-                            Description = reader.GetString("description"),
-                        });
-                    }
-                }
 
-                configuration = new Configuration
+            if (await reader.ReadAsync())
+            {
+                configuration.Id = reader.GetInt32("id");
+                configuration.Bezeichnung = reader.IsDBNull(reader.GetOrdinal("bezeichnung"))
+                    ? string.Empty
+                    : reader.GetString("bezeichnung");
+                configuration.Timestamp = reader.IsDBNull(reader.GetOrdinal("timestamp"))
+                    ? string.Empty
+                    : reader.GetString("timestamp");
+            }
+            else
+            {
+                Console.WriteLine("Keine Daten gefunden!");
+            }
+        }
+
+        await using (var command2 = new MySqlCommand(
+                         "SELECT workstation.id, workstation.name, workstation.description FROM configws " +
+                         "INNER JOIN workstation ON workstation.id = configws.workstationid " +
+                         "WHERE configws.configurationdraftid = @configId;",
+                         _dbConnector.GetConnection()))
+        {
+            command2.Parameters.AddWithValue("@configId", id);
+            await using var reader2 = await command2.ExecuteReaderAsync();
+            var workstations = new List<Workstation>();
+
+            while (await reader2.ReadAsync())
+            {
+                workstations.Add(new Workstation
                 {
-                    Id = reader.GetInt32("id"),
-                    Bezeichnung = reader.GetString("bezeichnung"),
-                    Workstations = workstations,
-                    Timestamp = reader.GetString("dateOfCreation")
-                };
+                    Id = reader2.GetInt32("id"),
+                    Name = reader2.GetString("name"),
+                    Description = reader2.GetString("description"),
+                });
             }
 
+            configuration.Workstations = workstations;
         }
         await _dbConnector.CloseConnectionAsync();
 

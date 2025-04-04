@@ -1,9 +1,14 @@
 ﻿@page "/"
 @using INIManagerServer.Components.Models
+@using INIManagerServer.Components.Services
+@using INIManagerServer.Components.Services.Interfaces
 @using DataGridEditMode = Radzen.DataGridEditMode
 @using Variant = Radzen.Variant
-@inject NavigationManager navigationManager
 @rendermode InteractiveServer
+@inject NavigationManager navigationManager
+@inject IConfigurationService ConfigurationService
+@inject ConfigurationDraftService ConfigurationDraftService
+
 <MudPopoverProvider />
 
 <div class="home-container">
@@ -36,6 +41,9 @@
     bool fixed_header = true;
     bool fixed_footer = false;
 
+    List<Configuration> _configurations = new();
+    List<Configuration> _configurationDrafts = new();
+    
     IEnumerable<Workstation> workstations = new List<Workstation>
     {
         new Workstation { Id = 1, Name = "Workstation 1", Description = "Description 1" },
@@ -45,13 +53,16 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
         
+        _configurations = await ConfigurationService.ReadConfiguration();
+        _configurationDrafts = await ConfigurationDraftService.ReadConfiguration();
     }
     
      void EditConfiguration(int id)
     {
         Console.WriteLine(id);
         Task.Delay(100);
-        navigationManager.NavigateTo($"/Configurator/{id}");
+        navigationManager.NavigateTo($"/Configurator/{id}?from=Home");
     }
 }

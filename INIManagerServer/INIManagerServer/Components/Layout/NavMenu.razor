@@ -71,14 +71,14 @@
         {
             do
             {
-                _id = Random.Shared.Next(1, 1000);
+                _id = Random.Shared.Next(1, 10000000);
             } while ((await _configurationDraftService.ReadConfigurationById(_id)).Id == _id);
 
             var result = await _configurationDraftService.CreateConfiguration(_id);
 
             if (result)
             {
-                _navigationManager.NavigateTo($"Configurator/{_id}");
+                _navigationManager.NavigateTo($"Configurator/{_id}?from=NavMenu");
                 break;
             }
         } while (true);
