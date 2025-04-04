@@ -9,14 +9,15 @@
         <MudButton Color="Color.Default" OnClick="Submit">Ok</MudButton>
     </DialogActions>
 </MudDialog>
+
 @code {
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
 
     private void Submit()
     {
-        MudDialog.Close(DialogResult.Ok(true));
         NavigationManager.NavigateTo("/");
+        MudDialog.Close(DialogResult.Ok(true));
     }
 
 }

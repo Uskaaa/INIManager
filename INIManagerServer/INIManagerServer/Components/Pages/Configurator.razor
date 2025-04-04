@@ -6,7 +6,6 @@
 @using INIManagerServer.Components.Services.Interfaces
 @using Colors = MudBlazor.Colors
 @using DialogOptions = MudBlazor.DialogOptions
-@using Variant = Radzen.Variant
 @rendermode InteractiveServer
 @inject IJSRuntime JsRuntime
 @inject IConfigurationService ConfigurationService
@@ -16,7 +15,7 @@
 @inject IDialogService DialogService
 
 <MudPopoverProvider/>
-<MudDialogProvider/>
+<MudDialogProvider />
 
 <div class="configurator-container">
     <div class="drag-header">
@@ -90,6 +89,7 @@
     private string _autoSave = "Draft saved!";
     private bool _autoSaved = true;
     private Timer? _timer;
+    private bool _isInitialized = false;
 
     private Configuration _configuration = new();
     private List<Workstation> _workstations = [];
@@ -98,11 +98,25 @@
     {
         await JsRuntime.InvokeVoidAsync("initDragDrop", _configuration, _workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
     }
+    
+    protected override bool ShouldRender()
+    {
+        if (_isInitialized == false)
+        {
+            return false;
+        }
 
+        return true;
+    }
+    
     protected override async Task OnInitializedAsync()
     {
+        
         await base.OnInitializedAsync();
-
+        
+        
+        _workstations = await WorkstationService.ReadWorkstation();
+        
         var uri = new Uri(NavigationManager.Uri);
         var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
         var value = query.GetValueOrDefault("from");
@@ -117,9 +131,10 @@
             _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id));
             _configuration.Type = TypeOfConfiguration.Active;
         }
-        else await OpenError_Dialog_NoOriginFound_Async();
-
-        _workstations = await WorkstationService.ReadWorkstation();
+        else
+        {
+            await OpenError_Dialog_NoOriginFound_Async();
+        }
     }
 
     [JSInvokable]
@@ -169,16 +184,12 @@
     private Task OpenError_Dialog_NoOriginFound_Async()
     {
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
-
         return DialogService.ShowAsync<Error_Dialog_NoOriginFound>("No origin was found", options);
     }
 
     private Task OpenSave_Dialog_Async()
     {
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
-
-
         return DialogService.ShowAsync<Save_Dialog>("Save", options);
     }
-
 }
