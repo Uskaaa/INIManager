@@ -1,6 +1,5 @@
 ﻿@page "/Configurator"
 @page "/Configurator/{Id}"
-@using System.Timers
 @using INIManagerServer.Components.Models
 @using INIManagerServer.Components.Pages.Dialogs
 @using INIManagerServer.Components.Services
@@ -13,12 +12,11 @@
 @inject IConfigurationService ConfigurationService
 @inject ConfigurationDraftService ConfigurationDraftService
 @inject WorkstationService WorkstationService
-@inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 
 <MudPopoverProvider/>
-<MudDialogProvider />
+<MudDialogProvider/>
 
 <div class="configurator-container">
     <div class="drag-header">
@@ -61,15 +59,7 @@
     </div>
     <div class="preview-footer">
         <div class="draft">
-            @if (_autoSaved)
-            {
-                <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Default" />
-            }
-            else
-            {
-                <MudProgressCircular Size="Size.Small" Style="color: #151A2D;" Indeterminate="true"/>
-            }
-            <RadzenBadge Style="color: black;" Variant="Variant.Text" Text="@_autoSave"/>
+            <AutoSaveStatus @ref="_autoSaveStatusComponent" AutoSaved="_autoSaved" AutoSaveText="@_autoSave" />
         </div>
         <MudButton Disabled="_autoSaved" OnClick="() => SaveDraft()" Variant="MudBlazor.Variant.Filled"
                    Style="@($"background-color:{Colors.BlueGray.Darken1}; color: white;")">Save as draft
@@ -91,22 +81,22 @@
 
 
 @code {
-    [Parameter] public string Id { get; set; }
     
+    private AutoSaveStatus _autoSaveStatusComponent;
+    
+    [Parameter] public string Id { get; set; }
+
     private string _configurationName = "";
     private string _autoSave = "Draft saved!";
     private bool _autoSaved = true;
-    private System.Threading.Timer _timer;
-    
+    private Timer? _timer;
+
     private Configuration _configuration = new();
     private List<Workstation> _workstations = [];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            await JsRuntime.InvokeVoidAsync("initDragDrop", _configuration, _workstations);
-        }
+        await JsRuntime.InvokeVoidAsync("initDragDrop", _configuration, _workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
     }
 
     protected override async Task OnInitializedAsync()
@@ -124,24 +114,28 @@
         }
         else if (value == "Home")
         {
-            _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id)); 
+            _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id));
             _configuration.Type = TypeOfConfiguration.Active;
         }
         else await OpenError_Dialog_NoOriginFound_Async();
-        
+
         _workstations = await WorkstationService.ReadWorkstation();
     }
 
-    private async Task OnUserInteraction()
+    [JSInvokable]
+    public async Task OnUserInteraction()
     {
-        _timer.Dispose();
+        if (_autoSaved != true) return;
+        _timer?.Dispose();
         _autoSave = "Saving draft...";
         _autoSaved = false;
-        _timer = new System.Threading.Timer(_ => SaveDraft(), null, 5000, Timeout.Infinite);
+        _timer = new Timer(_ => AutoSave(), null, 5000, Timeout.Infinite);
+        await _autoSaveStatusComponent.UpdateStatus(_autoSaved, _autoSave);
     }
 
     async void AutoSave()
     {
+        Console.WriteLine("asdf");
         bool result = false;
         if (_configuration.Type == TypeOfConfiguration.Draft) result = await ConfigurationDraftService.UpdateConfiguration(_configuration);
         else if (_configuration.Type == TypeOfConfiguration.Active) result = await ConfigurationService.UpdateConfiguration(_configuration);
@@ -150,18 +144,24 @@
         {
             _autoSave = "Draft saved!";
             _autoSaved = true;
+            await _autoSaveStatusComponent.UpdateStatus(_autoSaved, _autoSave);
+        }
+        else 
+        {
+            _autoSave = "Draft not saved!";
+            _autoSaved = false;
+            await _autoSaveStatusComponent.UpdateStatus(_autoSaved, _autoSave);
         }
     }
-    
-    async void SaveDraft()
+
+    void SaveDraft()
     {
-        
     }
-    
+
     void Save()
     {
     }
-    
+
     void Export()
     {
     }
@@ -172,13 +172,13 @@
 
         return DialogService.ShowAsync<Error_Dialog_NoOriginFound>("No origin was found", options);
     }
-    
+
     private Task OpenSave_Dialog_Async()
     {
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
 
-        
 
         return DialogService.ShowAsync<Save_Dialog>("Save", options);
     }
+
 }

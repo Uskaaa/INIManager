@@ -1,0 +1,29 @@
+﻿@using Variant = Radzen.Variant
+@code {
+    [Parameter] public bool AutoSaved { get; set; }
+    [Parameter] public string AutoSaveText { get; set; }
+    [Parameter] public EventCallback OnStatusChanged { get; set; }
+
+    protected override bool ShouldRender()
+    {
+        // Diese Komponente rendert sich nur, wenn sich AutoSaved oder AutoSaveText ändern
+        return true;
+    }
+
+    public async Task UpdateStatus(bool saved, string text)
+    {
+        AutoSaved = saved;
+        AutoSaveText = text;
+        await InvokeAsync(StateHasChanged);
+    }
+}
+
+@if (AutoSaved)
+{
+    <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Default" />
+}
+else
+{
+    <MudProgressCircular Size="Size.Small" Style="color: #151A2D;" Indeterminate="true" />
+}
+<RadzenBadge Style="color: black;" Variant="Variant.Text" Text="@AutoSaveText" />

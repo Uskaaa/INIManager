@@ -1,4 +1,5 @@
-window.initDragDrop = (configurationJson, workstationsJson) => {
+window.initDragDrop = (configurationJson, workstationsJson, dotNetHelper) => {
+    console.log('Drag-and-Drop started!');
     const configuration = configurationJson;
     const workstations = workstationsJson;
     
@@ -10,6 +11,7 @@ window.initDragDrop = (configurationJson, workstationsJson) => {
         const itemsInTarget = targetList.querySelectorAll(".item");
         const itemTexts = Array.from(itemsInTarget).map(item => item.textContent.trim());
         previewTextarea.value = itemTexts.join("\n");
+        dotNetHelper.invokeMethodAsync('OnUserInteraction');
     }
 
     function initDraggableItems(list) {
@@ -67,10 +69,6 @@ window.initDragDrop = (configurationJson, workstationsJson) => {
         // So oder so wird die Vorschau aktualisiert
         updatePreview();
     }
-
-    DotNet.invokeMethodAsync('INIManagerServer', 'SendModelsToJs').then((data) => {
-        console.log(data);
-    })
     
     draggableLists.forEach(list => {
         initDraggableItems(list);
