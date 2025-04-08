@@ -36,8 +36,6 @@ public class Program
         builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
         builder.Services.AddScoped<WorkstationService>();
         builder.Services.AddScoped<ConfigurationDraftService>();
-        
-        
 
         var app = builder.Build();
 

@@ -22,10 +22,14 @@
     position: sticky;
     top: 0;
     padding: 10px;
-    border: 1px solid #ccc;
     z-index: 2;
     height: 50px;
     box-sizing: border-box;
+}
+
+.drag-header h3 {
+    font-weight: bold;
+    margin: 0;
 }
 
 .drag-container {
@@ -34,7 +38,6 @@
     display: flex;
     gap: 20px;
     overflow: hidden;
-    border: 1px solid #ccc;
     position: relative;
     height: 100%;
     box-sizing: border-box;
@@ -43,6 +46,14 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    padding: 1rem;
+    height: 100%;
+    box-sizing: border-box;
+}
+.drag-area h3 {
+    font-weight: bold;
 }
 .drag-area h2 {
     color: black;
@@ -50,12 +61,14 @@
 }
 .draggable-list {
     width: 100%;
-    padding: 20px;
+    padding: 0.5rem;
     background: #fff;
     border-radius: 7px;
+    flex: 1;
     overflow-y: auto;
-    min-height: 100%;
     border: 1px solid #ccc;
+    min-height: 0;
+    margin-bottom: 0;
 }
 .draggable-list .item {
     list-style: none;
@@ -68,6 +81,7 @@
     margin-bottom: 11px;
     border: 1px solid #ccc;
     justify-content: space-between;
+    transition: transform 0.2s ease;
 }
 .item .details {
     display: flex;
@@ -82,11 +96,13 @@
     border-radius: 50%;
 }
 .item .details span {
-    font-size: 1.13rem;
 }
 .item i {
     color: #474747;
-    font-size: 1.13rem;
+}
+.item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .item.dragging {
     opacity: 0.6;
@@ -95,7 +111,6 @@
     opacity: 0;
 }
 .target-list:empty::before {
-    content: "Ziehe Items hierher";
     color: #ccc;
     text-align: center;
     line-height: 260px;
@@ -106,7 +121,6 @@
     position: relative;
     bottom: 0;
     padding: 10px;
-    border: 1px solid #ccc;
     z-index: 1;
     height: 50px;
     box-sizing: border-box;
@@ -121,7 +135,6 @@
     position: sticky;
     top: 0;
     padding: 10px;
-    border: 1px solid #ccc;
     z-index: 2;
     height: 50px;
     box-sizing: border-box;
@@ -131,9 +144,22 @@
     grid-area: preview-container;
     height: 100%;
     display: flex;
+    flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
     box-sizing: border-box;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.preview-container h3 {
+    font-weight: bold;
+}
+
+.preview-container textarea {
+    background-color: white;
+    border-radius: 8px;
 }
 
 .preview-textarea {
@@ -146,8 +172,6 @@
     overflow-y: auto;
     white-space: pre-wrap;
     word-wrap: break-word;
-    font-family: Arial, sans-serif;
-    font-size: 1rem;
 }
 
 .preview-footer {
@@ -159,7 +183,6 @@
     position: relative;
     bottom: 0;
     padding: 10px;
-    border: 1px solid #ccc;
     z-index: 1;
     height: 50px;
     box-sizing: border-box;
@@ -171,4 +194,23 @@
     align-items: center;
     gap: 10px;
     margin-right: auto;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    background-color: #4a90e2;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+button:hover {
+    background-color: #357abd;
 }

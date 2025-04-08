@@ -4,7 +4,6 @@
 @using INIManagerServer.Components.Pages.Dialogs
 @using INIManagerServer.Components.Services
 @using INIManagerServer.Components.Services.Interfaces
-@using Colors = MudBlazor.Colors
 @using DialogOptions = MudBlazor.DialogOptions
 @rendermode InteractiveServer
 @inject IJSRuntime JsRuntime
@@ -16,16 +15,18 @@
 
 <MudPopoverProvider/>
 <MudDialogProvider />
+<MudDialog />
 
 <div class="configurator-container">
     <div class="drag-header">
         @if (!_configuration.Equals(null))
         {
-            <span>Configurator</span>
+            <h3>Configuration</h3>
         }
     </div>
     <div class="drag-container">
         <div class="drag-area">
+            <h3>Workstations</h3>
             <ul class="source-list draggable-list">
                 @foreach (var workstation in _workstations)
                 {
@@ -39,6 +40,7 @@
             </ul>
         </div>
         <div class="drag-area">
+            <h3>Configuration</h3>
             <ul class="target-list draggable-list">
 
             </ul>
@@ -46,29 +48,23 @@
 
     </div>
     <div class="drag-footer">
-        <span>Configurator</span>
-    </div>
-    <div class="preview-header">
-        <MudTooltip Text="..." Arrow="true" Placement="Placement.Left">
-            <RadzenButton Icon="lightbulb" ButtonStyle="ButtonStyle.Info"/>
-        </MudTooltip>
-    </div>
-    <div class="preview-container">
-        <textarea type="text" class="preview-textarea preview"></textarea>
-    </div>
-    <div class="preview-footer">
         <div class="draft">
             <AutoSaveStatus @ref="_autoSaveStatusComponent" AutoSaved="_autoSaved" AutoSaveText="@_autoSave" />
         </div>
-        <MudButton Disabled="_autoSaved" OnClick="() => SaveDraft()" Variant="MudBlazor.Variant.Filled"
-                   Style="@($"background-color:{Colors.BlueGray.Darken1}; color: white;")">Save as draft
-        </MudButton>
-        <MudButton OnClick="() => OpenSave_Dialog_Async()" Variant="MudBlazor.Variant.Filled"
-                   Style="@($"background-color:{Colors.BlueGray.Darken1}; color: white;")">Save
-        </MudButton>
-        <MudButton OnClick="() => Export()" Variant="MudBlazor.Variant.Filled" StartIcon="@Icons.Material.Filled.Save"
-                   Style="background-color: #151A2D; color: white;">Export
-        </MudButton>
+    </div>
+    <div class="preview-header">
+        @_currentDateTime
+    </div>
+    <div class="preview-container">
+        <h3>Live-Preview</h3>
+        <textarea readonly disabled type="text" class="preview-textarea preview"></textarea>
+    </div>
+    <div class="preview-footer">
+        <div class="action-buttons">
+            <button id="save-draft">Save Draft</button>
+            <button @onclick="() => Save()" id="save">Save</button>
+            <button id="export">Export</button>
+        </div>
     </div>
 </div>
 
@@ -84,12 +80,12 @@
     private AutoSaveStatus _autoSaveStatusComponent;
     
     [Parameter] public string Id { get; set; }
-
+    private static DateOnly _time = DateOnly.FromDateTime(DateTime.Now);
+    private string _currentDateTime = $"{_time.DayOfWeek.ToString()}, {_time}";
     private string _configurationName = "";
     private string _autoSave = "Draft saved!";
     private bool _autoSaved = true;
     private Timer? _timer;
-    private bool _isInitialized = false;
 
     private Configuration _configuration = new();
     private List<Workstation> _workstations = [];
@@ -101,23 +97,36 @@
     
     protected override bool ShouldRender()
     {
-        if (_isInitialized == false)
+        Uri uri = new Uri(NavigationManager.Uri);
+        
+        if (uri.Query.Contains("from=NavMenu"))
         {
-            return false;
+            return true;
         }
-
-        return true;
+    
+        if (uri.Query.Contains("from=Home"))
+        {
+            return true;
+        }
+    
+        return false;
     }
     
     protected override async Task OnInitializedAsync()
     {
+        Uri uri = new Uri(NavigationManager.Uri);
+        
+        if (!(uri.Query.Contains("NavMenu") || uri.Query.Contains("Home")))
+        {
+            Console.WriteLine("No origin found");
+            await OpenError_Dialog_NoOriginFound_Async();
+            return;
+        }
         
         await base.OnInitializedAsync();
         
-        
         _workstations = await WorkstationService.ReadWorkstation();
-        
-        var uri = new Uri(NavigationManager.Uri);
+
         var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
         var value = query.GetValueOrDefault("from");
 
@@ -130,10 +139,6 @@
         {
             _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id));
             _configuration.Type = TypeOfConfiguration.Active;
-        }
-        else
-        {
-            await OpenError_Dialog_NoOriginFound_Async();
         }
     }
 
@@ -175,6 +180,7 @@
 
     void Save()
     {
+        
     }
 
     void Export()

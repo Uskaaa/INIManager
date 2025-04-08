@@ -8,42 +8,55 @@
 @inject NavigationManager navigationManager
 @inject IConfigurationService ConfigurationService
 @inject ConfigurationDraftService ConfigurationDraftService
+@inject IJSRuntime JSRuntime
 
-<MudPopoverProvider />
-
-<div class="home-container">
-    <div class="section-draft">
-        <MudTable Items="@workstations" FixedHeader="@fixed_header" Hover="true" FixedFooter="@fixed_footer" Height="@(fixed_header || fixed_footer ?"400px":"")">
-            <HeaderContent>
-                <MudTh>Id</MudTh>
-                <MudTh>Name</MudTh>
-                <MudTh>Description</MudTh>
-                <MudTh></MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Id">@context.Id</MudTd>
-                <MudTd DataLabel="Name">@context.Name</MudTd>
-                <MudTd DataLabel="Description">@context.Description</MudTd>
-                <MudTd><RadzenButton Click=@(args => EditConfiguration(@context.Id)) Text="Edit" ButtonStyle="ButtonStyle.Light" /></MudTd>
-            </RowTemplate>
-            <PagerContent>
-                <MudTablePager PageSizeOptions="new int[]{50, 100}" />
-            </PagerContent>
-        </MudTable>
+<div class="container">
+    <div class="table-container">
+        <h3>Draft Configurations</h3>
+        <div class="table-wrapper">
+            <table id="draftTable">
+                <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Name</th>
+                    <th>Workstations</th>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- Table content will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <div class="section-finished">
-        
+    <div class="table-container">
+        <h3>Finished Configurations</h3>
+        <div class="table-wrapper">
+            <table id="finishedTable">
+                <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Name</th>
+                    <th>Workstations</th>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- Table content will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 @code {
-    bool fixed_header = true;
-    bool fixed_footer = false;
 
     List<Configuration> _configurations = new();
     List<Configuration> _configurationDrafts = new();
-    
+
     IEnumerable<Workstation> workstations = new List<Workstation>
     {
         new Workstation { Id = 1, Name = "Workstation 1", Description = "Description 1" },
@@ -51,15 +64,20 @@
         new Workstation { Id = 3, Name = "Workstation 3", Description = "Description 3" }
     };
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JSRuntime.InvokeVoidAsync("initHome");
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        
+
         _configurations = await ConfigurationService.ReadConfiguration();
         _configurationDrafts = await ConfigurationDraftService.ReadConfiguration();
     }
-    
-     void EditConfiguration(int id)
+
+    void EditConfiguration(int id)
     {
         Console.WriteLine(id);
         Task.Delay(100);

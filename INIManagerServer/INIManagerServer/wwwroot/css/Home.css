@@ -3,15 +3,17 @@
     flex-direction: column;
     gap: 30px;
     overflow: auto;
+    padding: 1rem;
 }
 
 .table-container {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 20px;
+    padding: 1rem;
     animation: fadeIn 0.5s ease-out;
     position: relative;
     overflow: auto;
+    background-color: #f5f5f5;
 }
 
 @keyframes fadeIn {
@@ -25,11 +27,10 @@
     }
 }
 
-h2 {
-    color: #4a90e2;
-    margin-bottom: 20px;
-    font-size: 1.5rem;
+h3 {
+    margin-bottom: 1rem;
     animation: slideIn 0.5s ease-out;
+    font-weight: bold;
 }
 
 @keyframes slideIn {

@@ -2,59 +2,31 @@
 @using INIManagerServer.Components.Services
 @inject ConfigurationDraftService _configurationDraftService
 @inject NavigationManager _navigationManager
+@inject IJSRuntime JsRuntime
 
-<aside class="sidebar">
-    <!-- Sidebar header -->
-    <header class="sidebar-header">
-        <a href="/" class="header-logo">
-            <h3>IniManager</h3>
-        </a>
-
-    </header>
+<button class="hamburger-btn">
+    <i class="fas fa-bars"></i>
+</button>
+<div class="sidebar">
+    <div class="sidebar-header">
+        <i class="fas fa-rocket"></i>
+        <h2>INIManager</h2>
+    </div>
     <nav class="sidebar-nav">
-        <!-- Primary top nav -->
-        <ul class="nav-list primary-nav">
-            <li class="nav-item">
-                <a href="/" class="nav-link">
-                    <span class="nav-icon material-symbols-rounded">dashboard</span>
-                    <span class="nav-label">Home</span>
-                </a>
-                <span class="nav-tooltip">Home</span>
-            </li>
-            <li class="nav-item">
-                <a @onclick="() => NavigateToConfigurator()" class="nav-link">
-                    <span class="nav-icon material-symbols-rounded">insert_chart</span>
-                    <span class="nav-label">Configurator</span>
-                </a>
-                <span class="nav-tooltip">Configurator</span>
-            </li>
-            <li class="nav-item">
-                <a href="settings" class="nav-link">
-                    <span class="nav-icon material-symbols-rounded">settings</span>
-                    <span class="nav-label">Settings</span>
-                </a>
-                <span class="nav-tooltip">Settings</span>
-            </li>
-        </ul>
-        <!-- Secondary bottom nav -->
-        @* <ul class="nav-list secondary-nav"> *@
-        @*     <li class="nav-item"> *@
-        @*         <a href="#" class="nav-link"> *@
-        @*             <span class="nav-icon material-symbols-rounded">account_circle</span> *@
-        @*             <span class="nav-label">Profile</span> *@
-        @*         </a> *@
-        @*         <span class="nav-tooltip">Profile</span> *@
-        @*     </li> *@
-        @*     <li class="nav-item"> *@
-        @*         <a href="#" class="nav-link"> *@
-        @*             <span class="nav-icon material-symbols-rounded">logout</span> *@
-        @*             <span class="nav-label">Logout</span> *@
-        @*         </a> *@
-        @*         <span class="nav-tooltip">Logout</span> *@
-        @*     </li> *@
-        @* </ul> *@
+        <a @onclick="() => Navigate(1)" class="nav-item active">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a @onclick="() => Navigate(2)" class="nav-item">
+            <i class="fas fa-cogs"></i>
+            <span>Configurator</span>
+        </a>
+        <a @onclick="() => Navigate(3)" class="nav-item">
+            <i class="fas fa-sliders-h"></i>
+            <span>Settings</span>
+        </a>
     </nav>
-</aside>
+</div>
 
 @code {
     private int _id;
@@ -65,22 +37,40 @@
         await base.OnInitializedAsync();
     }
     
-    async Task NavigateToConfigurator()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        do
+        await JsRuntime.InvokeVoidAsync("initNavbar");
+    }
+    
+    async Task Navigate(int id)
+    {
+        switch (id)
         {
-            do
-            {
-                _id = Random.Shared.Next(1, 10000000);
-            } while ((await _configurationDraftService.ReadConfigurationById(_id)).Id == _id);
-
-            var result = await _configurationDraftService.CreateConfiguration(_id);
-
-            if (result)
-            {
-                _navigationManager.NavigateTo($"Configurator/{_id}?from=NavMenu");
+            case 1:
+                _navigationManager.NavigateTo("/");
                 break;
-            }
-        } while (true);
+            case 2:
+                do
+                {
+                    do
+                    {
+                        _id = Random.Shared.Next(1, 10000000);
+                    } while ((await _configurationDraftService.ReadConfigurationById(_id)).Id == _id);
+
+                    var result = await _configurationDraftService.CreateConfiguration(_id);
+
+                    if (result)
+                    {
+                        _navigationManager.NavigateTo($"Configurator/{_id}?from=NavMenu");
+                        break;
+                    }
+                } while (true);
+                break;
+            case 3:
+                _navigationManager.NavigateTo("/Settings");
+                break;
+            default:
+                break;
+        }
     }
 }

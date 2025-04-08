@@ -1,145 +1,176 @@
-.sidebar {
-    position: sticky;
-    width: 270px;
-    background: #151A2D;
-    height: 100vh;
-    transition: all 0.4s ease;
-}
-
-.sidebar .sidebar-header {
-    display: flex;
-    position: relative;
-    padding: 25px 20px;
-    align-items: center;
-    justify-content: space-between;
-}
-.sidebar-header .header-logo img {
-    width: 46px;
-    height: 46px;
-    display: block;
-    object-fit: contain;
-}
-.sidebar-nav .nav-list {
-    list-style: none;
-    display: flex;
-    gap: 4px;
-    padding: 0 15px;
-    flex-direction: column;
-    transform: translateY(15px);
-    transition: 0.4s ease;
-}
-.sidebar.collapsed .sidebar-nav .primary-nav {
-    transform: translateY(65px);
-}
-.sidebar-nav .nav-link {
-    color: #fff;
-    display: flex;
-    gap: 12px;
-    white-space: nowrap;
-    border-radius: 8px;
-    padding: 12px 15px;
-    align-items: center;
-    text-decoration: none;
-    transition: 0.4s ease;
-}
-.sidebar.collapsed .sidebar-nav .nav-link {
-    border-radius: 12px;
-}
-.sidebar .sidebar-nav .nav-link .nav-label {
-    transition: opacity 0.3s ease;
-}
-.sidebar.collapsed .sidebar-nav .nav-link .nav-label {
-    opacity: 0;
-    pointer-events: none;
-}
-.sidebar-nav .nav-link:hover {
-    color: #151A2D;
-    background: #fff;
-}
-.sidebar-nav .nav-item {
-    position: relative;
-}
-.sidebar-nav .nav-tooltip {
-    position: absolute;
-    top: -10px;
-    opacity: 0;
-    color: #151A2D;
+.hamburger-btn {
     display: none;
-    pointer-events: none;
-    padding: 6px 12px;
-    border-radius: 8px;
-    white-space: nowrap;
-    background: #fff;
-    left: calc(100% + 25px);
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
-    transition: 0s;
+    position: sticky;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #4a90e2;
+    cursor: pointer;
+    padding: 10px;
+    transition: transform 0.3s ease;
 }
-.sidebar.collapsed .sidebar-nav .nav-tooltip {
-    display: block;
+
+.hamburger-btn:hover {
+    transform: scale(1.1);
 }
-.sidebar-nav .nav-item:hover .nav-tooltip {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateY(50%);
-    transition: all 0.4s ease;
+
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background-color: #ffffff;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    left: 0;
+    top: 0;
+    padding: 20px 0;
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    overflow: hidden;
 }
-.sidebar-nav .secondary-nav {
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    margin-bottom: 30px;
+}
+
+.sidebar-header i {
+    font-size: 24px;
+    color: #4a90e2;
+    margin-right: 10px;
+}
+
+.sidebar-header h2 {
+    font-size: 18px;
+    color: #333;
+    font-weight: 600;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.sidebar-nav i, span, a {
+    cursor: pointer;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    text-decoration: none;
+    color: #666;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-item i {
+    font-size: 18px;
+    margin-right: 10px;
+    transition: transform 0.3s ease;
+}
+
+.nav-item span {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.nav-item:hover {
+    background-color: #f0f4f9;
+    color: #4a90e2;
+}
+
+.nav-item:hover i {
+    transform: translateX(5px);
+}
+
+.nav-item.active {
+    background-color: #4a90e2;
+    color: white;
+}
+
+.nav-item.active::before {
+    content: '';
     position: absolute;
-    bottom: 30px;
-    width: 100%;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background-color: #2c6cb0;
 }
-/* Responsive media query code for small screens */
-@media (max-width: 1024px) {
-    .sidebar {
-        height: 56px;
-        margin: 13px;
-        overflow-y: hidden;
-        scrollbar-width: none;
-        width: calc(100% - 26px);
-        max-height: calc(100vh - 26px);
+
+/* Animation for active state */
+@keyframes slideIn {
+    from {
+        transform: translateX(-10px);
+        opacity: 0;
     }
-    .sidebar.menu-active {
-        overflow-y: auto;
+    to {
+        transform: translateX(0);
+        opacity: 1;
     }
-    .sidebar .sidebar-header {
-        position: sticky;
-        top: 0;
-        z-index: 20;
-        border-radius: 16px;
-        background: #151A2D;
-        padding: 8px 10px;
-    }
-    .sidebar-header .header-logo img {
-        width: 40px;
-        height: 40px;
-    }
-    .sidebar-header .sidebar-toggler,
-    .sidebar-nav .nav-item:hover .nav-tooltip {
-        display: none;
+}
+
+.nav-item {
+    animation: slideIn 0.3s ease forwards;
+}
+
+.nav-item:nth-child(1) { animation-delay: 0.1s; }
+.nav-item:nth-child(2) { animation-delay: 0.2s; }
+.nav-item:nth-child(3) { animation-delay: 0.3s; }
+
+/* Overlay for mobile */
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hamburger-btn {
+        display: block;
     }
 
-    .sidebar-header .menu-toggler {
-        display: flex;
-        height: 30px;
-        width: 30px;
+    .sidebar {
+        transform: translateX(-100%);
     }
-    .sidebar-header .menu-toggler span {
-        font-size: 1.3rem;
+
+    .sidebar.active {
+        transform: translateX(0);
     }
-    .sidebar .sidebar-nav .nav-list {
-        padding: 0 10px;
+
+    .overlay.active {
+        display: block;
     }
-    .sidebar-nav .nav-link {
-        gap: 10px;
-        padding: 10px;
-        font-size: 0.94rem;
-    }
-    .sidebar-nav .nav-link .nav-icon {
-        font-size: 1.37rem;
-    }
-    .sidebar-nav .secondary-nav {
-        position: relative;
-        bottom: 0;
-        margin: 40px 0 30px;
+
+    .nav-item span {
+        display: block;
     }
 }
+
+@media (max-width: 480px) {
+    .sidebar {
+        width: 200px;
+    }
+
+    .sidebar-header h2 {
+        font-size: 16px;
+    }
+
+    .nav-item {
+        padding: 10px 15px;
+    }
+} 
