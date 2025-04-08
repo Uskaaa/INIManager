@@ -6,11 +6,17 @@ window.initDragDrop = (configurationJson, workstationsJson, dotNetHelper) => {
     const targetList = document.querySelector(".target-list");
     const draggableLists = document.querySelectorAll(".draggable-list");
     const previewTextarea = document.querySelector(".preview");
+    let currentConfiguration = [];
 
+    window.saveConfiguration = async function() {
+        return currentConfiguration;
+    };
+    
     function updatePreview() {
         const itemsInTarget = targetList.querySelectorAll(".item");
         const itemTexts = Array.from(itemsInTarget).map(item => item.textContent.trim());
         previewTextarea.value = itemTexts.join("\n");
+        currentConfiguration = itemTexts;
         dotNetHelper.invokeMethodAsync('OnUserInteraction');
     }
 

@@ -14,8 +14,8 @@
 @inject IDialogService DialogService
 
 <MudPopoverProvider/>
-<MudDialogProvider />
-<MudDialog />
+<MudDialogProvider/>
+<MudDialog/>
 
 <div class="configurator-container">
     <div class="drag-header">
@@ -49,7 +49,7 @@
     </div>
     <div class="drag-footer">
         <div class="draft">
-            <AutoSaveStatus @ref="_autoSaveStatusComponent" AutoSaved="_autoSaved" AutoSaveText="@_autoSave" />
+            <AutoSaveStatus @ref="_autoSaveStatusComponent" AutoSaved="_autoSaved" AutoSaveText="@_autoSave"/>
         </div>
     </div>
     <div class="preview-header">
@@ -62,7 +62,7 @@
     <div class="preview-footer">
         <div class="action-buttons">
             <button id="save-draft">Save Draft</button>
-            <button @onclick="() => Save()" id="save">Save</button>
+            <button @onclick="Save" id="save">Save</button>
             <button id="export">Export</button>
         </div>
     </div>
@@ -76,9 +76,9 @@
 
 
 @code {
-    
+
     private AutoSaveStatus _autoSaveStatusComponent;
-    
+
     [Parameter] public string Id { get; set; }
     private static DateOnly _time = DateOnly.FromDateTime(DateTime.Now);
     private string _currentDateTime = $"{_time.DayOfWeek.ToString()}, {_time}";
@@ -94,37 +94,37 @@
     {
         await JsRuntime.InvokeVoidAsync("initDragDrop", _configuration, _workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
     }
-    
+
     protected override bool ShouldRender()
     {
         Uri uri = new Uri(NavigationManager.Uri);
-        
+
         if (uri.Query.Contains("from=NavMenu"))
         {
             return true;
         }
-    
+
         if (uri.Query.Contains("from=Home"))
         {
             return true;
         }
-    
+
         return false;
     }
-    
+
     protected override async Task OnInitializedAsync()
     {
         Uri uri = new Uri(NavigationManager.Uri);
-        
+
         if (!(uri.Query.Contains("NavMenu") || uri.Query.Contains("Home")))
         {
             Console.WriteLine("No origin found");
             await OpenError_Dialog_NoOriginFound_Async();
             return;
         }
-        
+
         await base.OnInitializedAsync();
-        
+
         _workstations = await WorkstationService.ReadWorkstation();
 
         var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
@@ -166,7 +166,7 @@
             _autoSaved = true;
             await _autoSaveStatusComponent.UpdateStatus(_autoSaved, _autoSave);
         }
-        else 
+        else
         {
             _autoSave = "Draft not saved!";
             _autoSaved = false;
@@ -178,13 +178,29 @@
     {
     }
 
-    void Save()
+    async void Save()
     {
-        
+        var workstationList = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
+
+        if (workstationList.Length != 0)
+        {
+            List<Workstation> workstations = [];
+            foreach (var workstation in _workstations)
+            {
+                foreach (var workstationL in workstationList)
+                {
+                    if (workstation.Id.ToString() == workstationL)
+                    {
+                        workstations.Add(workstation);
+                    }
+                }
+            }
+        }
     }
 
     void Export()
     {
+        
     }
 
     private Task OpenError_Dialog_NoOriginFound_Async()
@@ -198,4 +214,5 @@
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
         return DialogService.ShowAsync<Save_Dialog>("Save", options);
     }
+
 }

@@ -1,6 +1,97 @@
 ﻿@page "/Settings"
-<h3>Settings</h3>
+@inject IJSRuntime JsRuntime
+
+<div class="settings-container">
+    <div class="settings-content">
+        <div class="tabs">
+            <button class="tab-button active" data-tab="general">Allgemein</button>
+            <button class="tab-button" data-tab="privacy">Datenschutz</button>
+            <button class="tab-button" data-tab="notifications">Benachrichtigungen</button>
+            <button class="tab-button" data-tab="appearance">Erscheinungsbild</button>
+        </div>
+
+        <div class="tab-content">
+            <div id="general" class="tab-pane active">
+                <h2>Allgemeine Einstellungen</h2>
+                <div class="setting-item">
+                    <label>Sprache</label>
+                    <select>
+                        <option>Deutsch</option>
+                        <option>English</option>
+                        <option>Français</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label>Zeitzone</label>
+                    <select>
+                        <option>Berlin (UTC+1)</option>
+                        <option>London (UTC+0)</option>
+                        <option>New York (UTC-5)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="privacy" class="tab-pane">
+                <h2>Datenschutz</h2>
+                <div class="setting-item">
+                    <label>Datenfreigabe</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="data-sharing">
+                        <span class="slider"></span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>Standortzugriff</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="location-access">
+                        <span class="slider"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="notifications" class="tab-pane">
+                <h2>Benachrichtigungen</h2>
+                <div class="setting-item">
+                    <label>E-Mail-Benachrichtigungen</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="email-notifications">
+                        <span class="slider"></span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>Push-Benachrichtigungen</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="push-notifications">
+                        <span class="slider"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="appearance" class="tab-pane">
+                <h2>Erscheinungsbild</h2>
+                <div class="setting-item">
+                    <label>Dark Mode</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="dark-mode">
+                        <span class="slider"></span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>Schriftgröße</label>
+                    <input type="range" min="12" max="24" value="16" class="slider-range">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
-    
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JsRuntime.InvokeVoidAsync("initSettings");
+        }
+    }
 }
