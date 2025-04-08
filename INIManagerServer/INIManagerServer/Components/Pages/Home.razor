@@ -2,8 +2,6 @@
 @using INIManagerServer.Components.Models
 @using INIManagerServer.Components.Services
 @using INIManagerServer.Components.Services.Interfaces
-@using DataGridEditMode = Radzen.DataGridEditMode
-@using Variant = Radzen.Variant
 @rendermode InteractiveServer
 @inject NavigationManager navigationManager
 @inject IConfigurationService ConfigurationService
@@ -56,13 +54,6 @@
 
     List<Configuration> _configurations = new();
     List<Configuration> _configurationDrafts = new();
-
-    IEnumerable<Workstation> workstations = new List<Workstation>
-    {
-        new Workstation { Id = 1, Name = "Workstation 1", Description = "Description 1" },
-        new Workstation { Id = 2, Name = "Workstation 2", Description = "Description 2" },
-        new Workstation { Id = 3, Name = "Workstation 3", Description = "Description 3" }
-    };
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

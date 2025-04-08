@@ -21,7 +21,7 @@
     <div class="drag-header">
         @if (!_configuration.Equals(null))
         {
-            <h3>Configuration</h3>
+            <h3>@_configuration.Bezeichnung</h3>
         }
     </div>
     <div class="drag-container">
@@ -76,13 +76,12 @@
 
 
 @code {
-
     private AutoSaveStatus _autoSaveStatusComponent;
 
     [Parameter] public string Id { get; set; }
+    
     private static DateOnly _time = DateOnly.FromDateTime(DateTime.Now);
     private string _currentDateTime = $"{_time.DayOfWeek.ToString()}, {_time}";
-    private string _configurationName = "";
     private string _autoSave = "Draft saved!";
     private bool _autoSaved = true;
     private Timer? _timer;
