@@ -4,7 +4,7 @@ namespace INIManagerServer.Components.Database;
 
 public class DbConnector : IDisposable
 {
-    private readonly SemaphoreSlim _connectionLock = new(1, 1);
+    private readonly SemaphoreSlim _connectionLock = new(1, 199);
     private readonly string _connectionString;
     private MySqlConnection _connection;
 
@@ -17,7 +17,7 @@ public class DbConnector : IDisposable
     // Verbindung öffnen
     public async Task OpenConnectionAsync()
     {
-        await _connectionLock.WaitAsync(); // Warten, falls bereits eine Verbindung geöffnet wird
+        await _connectionLock.WaitAsync();
         try
         {
             if (_connection.State != System.Data.ConnectionState.Open)
@@ -27,7 +27,7 @@ public class DbConnector : IDisposable
         }
         finally
         {
-            _connectionLock.Release(); // Sperre freigeben
+            _connectionLock.Release();
         }
     }
 

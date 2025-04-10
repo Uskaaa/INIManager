@@ -19,10 +19,7 @@
 
 <div class="configurator-container">
     <div class="drag-header">
-        @if (!_configuration.Equals(null))
-        {
-            <h3>@_configuration.Bezeichnung</h3>
-        }
+        <h3>@_configuration.Bezeichnung</h3>
     </div>
     <div class="drag-container">
         <div class="drag-area">
@@ -74,12 +71,11 @@
     }
 </style>
 
-
 @code {
     private AutoSaveStatus _autoSaveStatusComponent;
 
     [Parameter] public string Id { get; set; }
-    
+
     private static DateOnly _time = DateOnly.FromDateTime(DateTime.Now);
     private string _currentDateTime = $"{_time.DayOfWeek.ToString()}, {_time}";
     private string _autoSave = "Draft saved!";
@@ -89,40 +85,19 @@
     private Configuration _configuration = new();
     private List<Workstation> _workstations = [];
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    public override async Task SetParametersAsync(ParameterView parameters)
     {
-        await JsRuntime.InvokeVoidAsync("initDragDrop", _configuration, _workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
-    }
-
-    protected override bool ShouldRender()
-    {
-        Uri uri = new Uri(NavigationManager.Uri);
-
-        if (uri.Query.Contains("from=NavMenu"))
+        if (parameters.TryGetValue<string>(nameof(Id), out var value))
         {
-            return true;
+            if (String.IsNullOrEmpty(value)) NavigationManager.NavigateTo("/?noorigin=true");
         }
 
-        if (uri.Query.Contains("from=Home"))
-        {
-            return true;
-        }
-
-        return false;
+        await base.SetParametersAsync(parameters);
     }
 
     protected override async Task OnInitializedAsync()
     {
         Uri uri = new Uri(NavigationManager.Uri);
-
-        if (!(uri.Query.Contains("NavMenu") || uri.Query.Contains("Home")))
-        {
-            Console.WriteLine("No origin found");
-            await OpenError_Dialog_NoOriginFound_Async();
-            return;
-        }
-
-        await base.OnInitializedAsync();
 
         _workstations = await WorkstationService.ReadWorkstation();
 
@@ -133,12 +108,26 @@
         {
             _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
             _configuration.Type = TypeOfConfiguration.Draft;
+            _configuration.Id = Convert.ToInt32(Id);
+            _configuration.Bezeichnung = $"Configuration-Draft-{Id}";
         }
         else if (value == "Home")
         {
             _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id));
+            if (String.IsNullOrEmpty(_configuration.Bezeichnung))
+            {
+                _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
+            }
+
             _configuration.Type = TypeOfConfiguration.Active;
         }
+
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
     }
 
     [JSInvokable]
@@ -154,7 +143,6 @@
 
     async void AutoSave()
     {
-        Console.WriteLine("asdf");
         bool result = false;
         if (_configuration.Type == TypeOfConfiguration.Draft) result = await ConfigurationDraftService.UpdateConfiguration(_configuration);
         else if (_configuration.Type == TypeOfConfiguration.Active) result = await ConfigurationService.UpdateConfiguration(_configuration);
@@ -188,30 +176,29 @@
             {
                 foreach (var workstationL in workstationList)
                 {
-                    if (workstation.Id.ToString() == workstationL)
+                    if (workstation.Name == workstationL)
                     {
                         workstations.Add(workstation);
                     }
                 }
             }
         }
+
+        await OpenSave_Dialog_Async();
     }
 
     void Export()
     {
-        
-    }
-
-    private Task OpenError_Dialog_NoOriginFound_Async()
-    {
-        var options = new DialogOptions { BackgroundClass = "my-custom-class" };
-        return DialogService.ShowAsync<Error_Dialog_NoOriginFound>("No origin was found", options);
     }
 
     private Task OpenSave_Dialog_Async()
     {
+        var parameters = new DialogParameters
+        {
+            { "Configuration", _configuration },
+        };
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
-        return DialogService.ShowAsync<Save_Dialog>("Save", options);
+        return DialogService.ShowAsync<Save_Dialog>("Save", parameters, options);
     }
 
 }

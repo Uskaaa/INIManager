@@ -36,12 +36,15 @@
     {
         await base.OnInitializedAsync();
     }
-    
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await JsRuntime.InvokeVoidAsync("initNavbar");
+        if (firstRender)
+        {
+            await JsRuntime.InvokeVoidAsync("initNavbar");
+        }
     }
-    
+
     async Task Navigate(int id)
     {
         switch (id)
@@ -65,12 +68,12 @@
                         break;
                     }
                 } while (true);
+
                 break;
             case 3:
                 _navigationManager.NavigateTo("/Settings");
                 break;
-            default:
-                break;
         }
     }
+
 }

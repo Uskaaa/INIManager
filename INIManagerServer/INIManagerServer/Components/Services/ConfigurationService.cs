@@ -20,12 +20,23 @@ public class ConfigurationService : IConfigurationService
         {
             await _dbConnector.OpenConnectionAsync();
             using var command = new MySqlCommand(
-                "INSERT INTO configuration (id, bezeichnung, timestamp) VALUES (@id, @name, @timestamp);",
+                "INSERT INTO configuration (bezeichnung, timestamp) VALUES (@bezeichnung, @timestamp);",
                 _dbConnector.GetConnection());
-            command.Parameters.AddWithValue("@id", configuration.Id);
             command.Parameters.AddWithValue("@bezeichnung", configuration.Bezeichnung);
             command.Parameters.AddWithValue("@timestamp", configuration.Timestamp);
             await command.ExecuteNonQueryAsync();
+
+
+            foreach (var workstation in configuration.Workstations)
+            {
+                using var command2 = new MySqlCommand(
+                    "INSERT INTO configws (configurationid, workstationid) VALUES (@configurationid, @workstationid);",
+                    _dbConnector.GetConnection());
+                command2.Parameters.AddWithValue("@configurationid", configuration.Id);
+                command2.Parameters.AddWithValue("@workstationid", workstation.Id);
+                await command2.ExecuteNonQueryAsync();
+            }
+
             await _dbConnector.CloseConnectionAsync();
         }
         catch (Exception ex)
@@ -56,7 +67,7 @@ public class ConfigurationService : IConfigurationService
                 await using (var command2 = new MySqlCommand(
                                  "SELECT workstation.id, workstation.bezeichnung, workstation.description FROM configws " +
                                  "INNER JOIN workstation ON workstation.id = configws.workstationid " +
-                                 "WHERE configws.configurationid = @configId;",
+                                 "WHERE configws.configurationdraftid = @configId;",
                                  _dbConnector.GetConnection()))
                 {
                     command2.Parameters.AddWithValue("@configId", reader.GetInt32("id"));
@@ -71,13 +82,17 @@ public class ConfigurationService : IConfigurationService
                         });
                     }
                 }
-
+                
                 configurations.Add(new Configuration
                 {
                     Id = reader.GetInt32("id"),
-                    Bezeichnung = reader.GetString("bezeichnung"),
+                    Bezeichnung = reader.IsDBNull(reader.GetOrdinal("bezeichnung")) 
+                        ? string.Empty 
+                        : reader.GetString("bezeichnung"),
                     Workstations = workstations,
-                    Timestamp = reader.GetString("dateOfCreation")
+                    Timestamp = reader.IsDBNull(reader.GetOrdinal("timestamp")) 
+                        ? string.Empty 
+                        : reader.GetString("timestamp")
                 });
             }
 
@@ -92,8 +107,9 @@ public class ConfigurationService : IConfigurationService
         var configuration = new Configuration();
 
         await _dbConnector.OpenConnectionAsync();
-        await using (var command =
-                     new MySqlCommand(
+        Console.WriteLine($"Connection State: {_dbConnector.GetConnection().State}");
+
+        await using (var command = new MySqlCommand(
                          "SELECT id, bezeichnung, timestamp " +
                          "FROM configuration " +
                          "WHERE id = @configId;",
@@ -101,37 +117,44 @@ public class ConfigurationService : IConfigurationService
         {
             command.Parameters.AddWithValue("@configId", id);
             await using var reader = await command.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                var workstations = new List<Workstation>();
-                await using (var command2 = new MySqlCommand(
-                                 "SELECT workstation.id, workstation.name, workstation.description FROM configws " +
-                                 "INNER JOIN workstation ON workstation.id = configws.workstationid " +
-                                 "WHERE configws.configurationid = @configId;",
-                                 _dbConnector.GetConnection()))
-                {
-                    command2.Parameters.AddWithValue("@configId", reader.GetInt32("id"));
-                    await using var reader2 = await command2.ExecuteReaderAsync();
-                    while (await reader2.ReadAsync())
-                    {
-                        workstations.Add(new Workstation
-                        {
-                            Id = reader2.GetInt32("id"),
-                            Name = reader2.GetString("name"),
-                            Description = reader2.GetString("description"),
-                        });
-                    }
-                }
 
-                configuration = new Configuration
+            if (await reader.ReadAsync())
+            {
+                configuration.Id = reader.GetInt32("id");
+                configuration.Bezeichnung = reader.IsDBNull(reader.GetOrdinal("bezeichnung"))
+                    ? string.Empty
+                    : reader.GetString("bezeichnung");
+                configuration.Timestamp = reader.IsDBNull(reader.GetOrdinal("timestamp"))
+                    ? string.Empty
+                    : reader.GetString("timestamp");
+            }
+            else
+            {
+                Console.WriteLine("Keine Daten gefunden!");
+            }
+        }
+
+        await using (var command2 = new MySqlCommand(
+                         "SELECT workstation.id, workstation.name, workstation.description FROM configws " +
+                         "INNER JOIN workstation ON workstation.id = configws.workstationid " +
+                         "WHERE configws.configurationid = @configId;",
+                         _dbConnector.GetConnection()))
+        {
+            command2.Parameters.AddWithValue("@configId", id);
+            await using var reader2 = await command2.ExecuteReaderAsync();
+            var workstations = new List<Workstation>();
+
+            while (await reader2.ReadAsync())
+            {
+                workstations.Add(new Workstation
                 {
-                    Id = reader.GetInt32("id"),
-                    Bezeichnung = reader.GetString("bezeichnung"),
-                    Workstations = workstations,
-                    Timestamp = reader.GetString("dateOfCreation")
-                };
+                    Id = reader2.GetInt32("id"),
+                    Name = reader2.GetString("name"),
+                    Description = reader2.GetString("description"),
+                });
             }
 
+            configuration.Workstations = workstations;
         }
         await _dbConnector.CloseConnectionAsync();
 
@@ -140,12 +163,65 @@ public class ConfigurationService : IConfigurationService
 
     public async Task<bool> UpdateConfiguration(Configuration configuration)
     {
-        
+        try
+        {
+            await _dbConnector.OpenConnectionAsync();
+            using var command = new MySqlCommand(
+                "UPDATE configuration SET bezeichnung = @bezeichnung, timestamp = @timestamp WHERE id = @id;",
+                _dbConnector.GetConnection());
+            command.Parameters.AddWithValue("@id", configuration.Id);
+            command.Parameters.AddWithValue("@bezeichnung", configuration.Bezeichnung);
+            command.Parameters.AddWithValue("@timestamp", configuration.Timestamp);
+            await command.ExecuteNonQueryAsync();
+
+            using var command2 = new MySqlCommand(
+                "UPDATE configws SET configurationid = @configurationid, workstationid = @workstationid WHERE configurationid = @configurationid;",
+                _dbConnector.GetConnection());
+            foreach (var workstation in configuration.Workstations)
+            {
+                command2.Parameters.AddWithValue("@configurationid", configuration.Id);
+                command2.Parameters.AddWithValue("@workstationid", workstation.Id);
+                await command2.ExecuteNonQueryAsync();
+            }
+
+            await _dbConnector.CloseConnectionAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return false;
+        }
+
+        Console.WriteLine("Updated!");
         return true;
     }
 
     public async Task<bool> DeleteConfiguration(int id)
     {
+        try
+        {
+            await _dbConnector.OpenConnectionAsync();
+            using var command = new MySqlCommand(
+                "DELETE FROM configuration WHERE id = @id;",
+                _dbConnector.GetConnection());
+            command.Parameters.AddWithValue("@id", id);
+            await command.ExecuteNonQueryAsync();
+
+            using var command2 = new MySqlCommand(
+                "DELETE FROM configws WHERE configurationid = @id;",
+                _dbConnector.GetConnection());
+            command2.Parameters.AddWithValue("@configurationid", id);
+            await command2.ExecuteNonQueryAsync();
+
+            await _dbConnector.CloseConnectionAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return false;
+        }
+
+        Console.WriteLine("Updated!");
         return true;
     }
 }

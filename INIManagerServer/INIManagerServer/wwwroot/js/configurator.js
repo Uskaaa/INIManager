@@ -1,22 +1,49 @@
-window.initDragDrop = (configurationJson, workstationsJson, dotNetHelper) => {
-    console.log('Drag-and-Drop started!');
-    const configuration = configurationJson;
+window.initConfigurator = (workstationsJson, dotNetHelper) => {
+    console.log('Configurator started!');
     const workstations = workstationsJson;
-    
+    let configuration = [];
+
     const targetList = document.querySelector(".target-list");
     const draggableLists = document.querySelectorAll(".draggable-list");
     const previewTextarea = document.querySelector(".preview");
-    let currentConfiguration = [];
 
-    window.saveConfiguration = async function() {
-        return currentConfiguration;
-    };
+    if (workstations != null) {
+        if (workstations.length > 0) {
+            console.log('Workstations found in configuration!')
+            var dragoverEvent = new Event('dragover')
+            var dropEvent = new Event('drop');
+            var dragendEvent = new Event('dragend');
+
+            draggableLists.forEach(list => {
+                const items = list.querySelectorAll(".item");
+                items.forEach(item => {
+                    setTimeout(() => item.classList.add("dragging"), 0);
+                });
+
+                items.forEach(item => {
+                    item.dispatchEvent(dragoverEvent);
+                });
+
+                items.forEach(item => {
+                    item.dispatchEvent(dropEvent);
+                });
+
+                items.forEach(item => {
+                    item.dispatchEvent(dragendEvent);
+                });
+            });
+        }    
+    }
     
+    window.saveConfiguration = async function () {
+        return configuration;
+    };
+
     function updatePreview() {
         const itemsInTarget = targetList.querySelectorAll(".item");
         const itemTexts = Array.from(itemsInTarget).map(item => item.textContent.trim());
         previewTextarea.value = itemTexts.join("\n");
-        currentConfiguration = itemTexts;
+        configuration = itemTexts;
         dotNetHelper.invokeMethodAsync('OnUserInteraction');
     }
 
@@ -75,7 +102,7 @@ window.initDragDrop = (configurationJson, workstationsJson, dotNetHelper) => {
         // So oder so wird die Vorschau aktualisiert
         updatePreview();
     }
-    
+
     draggableLists.forEach(list => {
         initDraggableItems(list);
 

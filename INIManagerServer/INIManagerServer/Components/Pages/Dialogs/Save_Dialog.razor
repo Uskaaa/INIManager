@@ -1,22 +1,37 @@
-﻿@inject NavigationManager NavigationManager
+﻿@using INIManagerServer.Components.Models
+@using INIManagerServer.Components.Services.Interfaces
+@inject NavigationManager NavigationManager
 @rendermode InteractiveServer
+@inject IConfigurationService ConfigurationService
 
-<MudDialog>
+<MudDialog Style="width: 500px;">
     <DialogContent>
-        Please go back and try again!
+        <MudTextField @bind-Value="Configuration.Bezeichnung"
+                      For="@(() => Configuration.Bezeichnung)"
+                      Immediate="true"
+                      Label="Name" />
     </DialogContent>
     <DialogActions>
-        <MudButton Color="Color.Default" OnClick="Submit">Ok</MudButton>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
+    
+    [Parameter]
+    public Configuration Configuration { get; set; }
 
     private void Submit()
     {
-        NavigationManager.NavigateTo("/");
+        ConfigurationService.CreateConfiguration(Configuration);
         MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Close(DialogResult.Cancel());
     }
 }

@@ -1,12 +1,19 @@
 ﻿@page "/"
 @using INIManagerServer.Components.Models
+@using INIManagerServer.Components.Pages.Dialogs
 @using INIManagerServer.Components.Services
 @using INIManagerServer.Components.Services.Interfaces
+@using DialogOptions = MudBlazor.DialogOptions
 @rendermode InteractiveServer
-@inject NavigationManager navigationManager
+@inject NavigationManager NavigationManager
 @inject IConfigurationService ConfigurationService
 @inject ConfigurationDraftService ConfigurationDraftService
 @inject IJSRuntime JSRuntime
+@inject IDialogService DialogService
+
+<MudPopoverProvider/>
+<MudDialogProvider/>
+<MudDialog/>
 
 <div class="container">
     <div class="table-container">
@@ -51,9 +58,8 @@
 </div>
 
 @code {
-
-    List<Configuration> _configurations = new();
     List<Configuration> _configurationDrafts = new();
+    List<Configuration> _configurations = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -62,16 +68,38 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await base.OnInitializedAsync();
-
         _configurations = await ConfigurationService.ReadConfiguration();
         _configurationDrafts = await ConfigurationDraftService.ReadConfiguration();
+
+        Uri uri = new Uri(NavigationManager.Uri);
+
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        var value = query.GetValueOrDefault("noorigin");
+
+        if (value == "true") await OpenError_Dialog_NoOriginFound_Async();
+        
+        await base.OnInitializedAsync();
     }
 
     void EditConfiguration(int id)
     {
         Console.WriteLine(id);
         Task.Delay(100);
-        navigationManager.NavigateTo($"/Configurator/{id}?from=Home");
+        NavigationManager.NavigateTo($"/Configurator/{id}?from=Home");
     }
+
+    void ExportConfiguration(int id)
+    {
+    }
+
+    void DeleteConfiguration(int id)
+    {
+    }
+
+    private Task OpenError_Dialog_NoOriginFound_Async()
+    {
+        var options = new DialogOptions { BackgroundClass = "my-custom-class" };
+        return DialogService.ShowAsync<Error_Dialog_NoOriginFound>("No origin was found", options);
+    }
+
 }
