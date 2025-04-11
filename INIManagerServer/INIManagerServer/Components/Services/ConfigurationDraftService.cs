@@ -16,16 +16,29 @@ public class ConfigurationDraftService : IConfigurationService
 
     public async Task<bool> CreateConfiguration(Configuration configuration)
     {
+        long id = 0;
         try
         {
             await _dbConnector.OpenConnectionAsync();
             using var command = new MySqlCommand(
-                "INSERT INTO configuration_draft (id, bezeichnung, timestamp) VALUES (@id, @name, @timestamp) ",
+                "INSERT INTO configuration_draft (bezeichnung, timestamp) VALUES (@bezeichnung, @timestamp);",
                 _dbConnector.GetConnection());
-            command.Parameters.AddWithValue("@id", configuration.Id);
             command.Parameters.AddWithValue("@bezeichnung", configuration.Bezeichnung);
             command.Parameters.AddWithValue("@timestamp", configuration.Timestamp);
             await command.ExecuteNonQueryAsync();
+            
+            id = command.LastInsertedId;
+
+            foreach (var workstation in configuration.Workstations)
+            {
+                using var command3 = new MySqlCommand(
+                    "INSERT INTO configws (configurationdraftid, workstationid) VALUES (@configurationdraftid, @workstationid);",
+                    _dbConnector.GetConnection());
+                command3.Parameters.AddWithValue("@configurationdraftid", id);
+                command3.Parameters.AddWithValue("@workstationid", workstation.Id);
+                await command3.ExecuteNonQueryAsync();
+            }
+
             await _dbConnector.CloseConnectionAsync();
         }
         catch (Exception ex)
@@ -180,12 +193,65 @@ public class ConfigurationDraftService : IConfigurationService
 
     public async Task<bool> UpdateConfiguration(Configuration configuration)
     {
-        
+        try
+        {
+            await _dbConnector.OpenConnectionAsync();
+            using var command = new MySqlCommand(
+                "UPDATE configuration_draft SET bezeichnung = @bezeichnung, timestamp = @timestamp WHERE id = @id;",
+                _dbConnector.GetConnection());
+            command.Parameters.AddWithValue("@id", configuration.Id);
+            command.Parameters.AddWithValue("@bezeichnung", configuration.Bezeichnung);
+            command.Parameters.AddWithValue("@timestamp", configuration.Timestamp);
+            await command.ExecuteNonQueryAsync();
+
+            using var command2 = new MySqlCommand(
+                "UPDATE configws SET configurationdraftid = @configurationdraftid, workstationid = @workstationid WHERE configurationdraftid = @configurationdraftid;",
+                _dbConnector.GetConnection());
+            foreach (var workstation in configuration.Workstations)
+            {
+                command2.Parameters.AddWithValue("@configurationdraftid", configuration.Id);
+                command2.Parameters.AddWithValue("@workstationid", workstation.Id);
+                await command2.ExecuteNonQueryAsync();
+            }
+
+            await _dbConnector.CloseConnectionAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return false;
+        }
+
+        Console.WriteLine("Updated!");
         return true;
     }
 
     public async Task<bool> DeleteConfiguration(int id)
     {
+        try
+        {
+            await _dbConnector.OpenConnectionAsync();
+            using var command = new MySqlCommand(
+                "DELETE FROM configuration WHERE id = @id;",
+                _dbConnector.GetConnection());
+            command.Parameters.AddWithValue("@id", id);
+            await command.ExecuteNonQueryAsync();
+
+            using var command2 = new MySqlCommand(
+                "DELETE FROM configws WHERE configurationdraftid = @id;",
+                _dbConnector.GetConnection());
+            command2.Parameters.AddWithValue("@configurationdraftid", id);
+            await command2.ExecuteNonQueryAsync();
+
+            await _dbConnector.CloseConnectionAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return false;
+        }
+
+        Console.WriteLine("Deleted!");
         return true;
     }
 }

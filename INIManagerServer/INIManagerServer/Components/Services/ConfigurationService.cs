@@ -229,7 +229,7 @@ public class ConfigurationService : IConfigurationService
             return false;
         }
 
-        Console.WriteLine("Updated!");
+        Console.WriteLine("Deleted!");
         return true;
     }
 }
