@@ -193,6 +193,7 @@ public class ConfigurationDraftService : IConfigurationService
 
     public async Task<bool> UpdateConfiguration(Configuration configuration)
     {
+        long id = 0;
         try
         {
             await _dbConnector.OpenConnectionAsync();
@@ -204,11 +205,11 @@ public class ConfigurationDraftService : IConfigurationService
             command.Parameters.AddWithValue("@timestamp", configuration.Timestamp);
             await command.ExecuteNonQueryAsync();
 
-            using var command2 = new MySqlCommand(
-                "UPDATE configws SET configurationdraftid = @configurationdraftid, workstationid = @workstationid WHERE configurationdraftid = @configurationdraftid;",
-                _dbConnector.GetConnection());
             foreach (var workstation in configuration.Workstations)
             {
+                using var command2 = new MySqlCommand(
+                    "UPDATE configws SET workstationid = @workstationid WHERE configurationdraftid = @configurationdraftid;",
+                    _dbConnector.GetConnection());
                 command2.Parameters.AddWithValue("@configurationdraftid", configuration.Id);
                 command2.Parameters.AddWithValue("@workstationid", workstation.Id);
                 await command2.ExecuteNonQueryAsync();
