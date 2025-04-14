@@ -30,7 +30,33 @@
                 </tr>
                 </thead>
                 <tbody>
-                <!-- Table content will be populated by JavaScript -->
+                @foreach (var configuration in _configurationDrafts)
+                {
+                    <tr>
+                        <td>@configuration.Id</td>
+                        <td>@configuration.Bezeichnung</td>
+                        <td>
+                            <select>
+                                @foreach (var workstation in configuration.Workstations)
+                                {
+                                    <option value="@workstation.Name">@workstation.Name</option>
+                                }
+                            </select>
+                        </td>
+                        <td>@configuration.Timestamp</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-edit" title="Edit" @onclick="() => Edit(configuration.Id)"><i
+                                        class="fas fa-edit"></i></button>
+                                <button class="btn btn-export" title="Export" @onclick="() => Export(configuration.Id)">
+                                    <i class="fas fa-file-export"></i>
+                                </button>
+                                <button class="btn btn-delete" title="Delete" @onclick="() => Delete(configuration.Id)">
+                                    <i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                }
                 </tbody>
             </table>
         </div>
@@ -50,7 +76,33 @@
                 </tr>
                 </thead>
                 <tbody>
-                <!-- Table content will be populated by JavaScript -->
+                @foreach (var configuration in _configurations)
+                {
+                    <tr>
+                        <td>@configuration.Id</td>
+                        <td>@configuration.Bezeichnung</td>
+                        <td>
+                            <select>
+                                @foreach (var workstation in configuration.Workstations)
+                                {
+                                    <option value="@workstation.Name">@workstation.Name</option>
+                                }
+                            </select>
+                        </td>
+                        <td>@configuration.Timestamp</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-edit" title="Edit" @onclick="() => Edit(configuration.Id)"><i
+                                        class="fas fa-edit"></i></button>
+                                <button class="btn btn-export" title="Export" @onclick="() => Export(configuration.Id)">
+                                    <i class="fas fa-file-export"></i>
+                                </button>
+                                <button class="btn btn-delete" title="Delete" @onclick="() => Delete(configuration.Id)">
+                                    <i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                }
                 </tbody>
             </table>
         </div>
@@ -58,41 +110,44 @@
 </div>
 
 @code {
-    List<Configuration> _configurationDrafts = new();
-    List<Configuration> _configurations = new();
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        await JSRuntime.InvokeVoidAsync("initHome");
-    }
+    List<Configuration> _configurationDrafts = [];
+    List<Configuration> _configurations = [];
 
     protected override async Task OnInitializedAsync()
     {
-        _configurations = await ConfigurationService.ReadConfiguration();
         _configurationDrafts = await ConfigurationDraftService.ReadConfiguration();
+        _configurations = await ConfigurationService.ReadConfiguration();
 
-        Uri uri = new Uri(NavigationManager.Uri);
+        var uri = new Uri(NavigationManager.Uri);
 
         var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
         var value = query.GetValueOrDefault("noorigin");
 
         if (value == "true") await OpenError_Dialog_NoOriginFound_Async();
-        
+
         await base.OnInitializedAsync();
     }
 
-    void EditConfiguration(int id)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("initHome");
+        }
+    }
+
+    void Edit(int id)
     {
         Console.WriteLine(id);
         Task.Delay(100);
         NavigationManager.NavigateTo($"/Configurator/{id}?from=Home");
     }
 
-    void ExportConfiguration(int id)
+    void Export(int id)
     {
     }
 
-    void DeleteConfiguration(int id)
+    void Delete(int id)
     {
     }
 
