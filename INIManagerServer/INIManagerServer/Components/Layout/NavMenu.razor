@@ -13,15 +13,15 @@
         <h2>INIManager</h2>
     </div>
     <nav class="sidebar-nav">
-        <a @onclick="() => Navigate(1)" class="nav-item active">
+        <a @onclick="() => Navigate(1)" id="home" class="nav-item active">
             <i class="fas fa-home"></i>
             <span>Home</span>
         </a>
-        <a @onclick="() => Navigate(2)" class="nav-item">
+        <a @onclick="() => Navigate(2)" id="configurator" class="nav-item">
             <i class="fas fa-cogs"></i>
             <span>Configurator</span>
         </a>
-        <a @onclick="() => Navigate(3)" class="nav-item">
+        <a @onclick="() => Navigate(3)" id="settings" class="nav-item">
             <i class="fas fa-sliders-h"></i>
             <span>Settings</span>
         </a>
@@ -39,10 +39,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            await JsRuntime.InvokeVoidAsync("initNavbar");
-        }
+        await JsRuntime.InvokeVoidAsync("initNavbar");
     }
 
     async Task Navigate(int id)
@@ -50,7 +47,7 @@
         switch (id)
         {
             case 1:
-                _navigationManager.NavigateTo("/");
+                _navigationManager.NavigateTo("/Home");
                 break;
             case 2:
                 do

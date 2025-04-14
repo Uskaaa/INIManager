@@ -5,7 +5,6 @@
 @using INIManagerServer.Components.Services
 @using INIManagerServer.Components.Services.Interfaces
 @using DialogOptions = MudBlazor.DialogOptions
-@using FilterOperator = MudBlazor.FilterOperator
 @rendermode InteractiveServer
 @inject IJSRuntime JsRuntime
 @inject IConfigurationService ConfigurationService
@@ -90,7 +89,7 @@
     {
         if (parameters.TryGetValue<string>(nameof(Id), out var value))
         {
-            if (String.IsNullOrEmpty(value)) NavigationManager.NavigateTo("/?noorigin=true");
+            if (String.IsNullOrEmpty(value)) NavigationManager.NavigateTo("/Home?noorigin=true");
         }
 
         await base.SetParametersAsync(parameters);
@@ -98,6 +97,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+        NavigationManager.LocationChanged += (sender, args) =>
+        {
+            JsRuntime.InvokeVoidAsync("handleRouteChange", args.Location);
+        };
+        
         Uri uri = new Uri(NavigationManager.Uri);
 
         _workstations = await WorkstationService.ReadWorkstation();
@@ -112,7 +116,7 @@
             _configuration.Id = Convert.ToInt32(Id);
             _configuration.Bezeichnung = $"Configuration-Draft-{Id}";
         }
-        else if (value == "Home")
+        else if (value == "Start")
         {
             _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id));
             if (String.IsNullOrEmpty(_configuration.Bezeichnung))
