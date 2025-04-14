@@ -1,5 +1,6 @@
 ﻿@using INIManagerServer.Components.Models
 @using INIManagerServer.Components.Services.Interfaces
+@using FilterOperator = MudBlazor.FilterOperator
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 @inject IConfigurationService ConfigurationService
@@ -10,10 +11,15 @@
                       For="@(() => Configuration.Bezeichnung)"
                       Immediate="true"
                       Label="Name" />
+        <br>
+        <MudTextField @bind-Value="Timestamp"
+                      For="@(() => Configuration.Timestamp)"
+                      Label="Timestamp" 
+                      ReadOnly="true"/>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+        <button class="button-cancel" @onclick="Cancel">Cancel</button>
+        <button class="button-save"  @onclick="Submit">Save</button>
     </DialogActions>
 </MudDialog>
 
@@ -23,6 +29,8 @@
     
     [Parameter]
     public Configuration Configuration { get; set; }
+
+    string Timestamp = DateTime.Now.ToString("yyyy-MM-dd");
 
     private void Submit()
     {
