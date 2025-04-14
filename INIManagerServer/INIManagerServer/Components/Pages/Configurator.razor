@@ -5,6 +5,7 @@
 @using INIManagerServer.Components.Services
 @using INIManagerServer.Components.Services.Interfaces
 @using DialogOptions = MudBlazor.DialogOptions
+@using FilterOperator = MudBlazor.FilterOperator
 @rendermode InteractiveServer
 @inject IJSRuntime JsRuntime
 @inject IConfigurationService ConfigurationService
@@ -127,7 +128,11 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
+        if (firstRender)
+        {
+            await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
+        }
+        
     }
 
     [JSInvokable]
@@ -137,6 +142,7 @@
         _timer?.Dispose();
         _autoSave = "Saving draft...";
         _autoSaved = false;
+        _configuration.Timestamp = DateTime.Now.ToString("yyyy-MM-dd");
         _timer = new Timer(_ => AutoSave(), null, 5000, Timeout.Infinite);
         await _autoSaveStatusComponent.UpdateStatus(_autoSaved, _autoSave);
     }
