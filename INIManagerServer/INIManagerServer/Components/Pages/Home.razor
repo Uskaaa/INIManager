@@ -1,15 +1,15 @@
 ﻿@page "/"
 @page "/Home"
+@rendermode InteractiveServer
 @using INIManagerServer.Components.Models
 @using INIManagerServer.Components.Pages.Dialogs
 @using INIManagerServer.Components.Services
 @using INIManagerServer.Components.Services.Interfaces
 @using DialogOptions = MudBlazor.DialogOptions
-@rendermode InteractiveServer
+@inject IJSRuntime JsRuntime
 @inject NavigationManager NavigationManager
 @inject IConfigurationService ConfigurationService
 @inject ConfigurationDraftService ConfigurationDraftService
-@inject IJSRuntime JSRuntime
 @inject IDialogService DialogService
 
 <MudPopoverProvider/>
@@ -118,7 +118,7 @@
     {
         NavigationManager.LocationChanged += (sender, args) =>
         {
-            JSRuntime.InvokeVoidAsync("handleRouteChange", args.Location);
+            JsRuntime.InvokeVoidAsync("handleRouteChange", args.Location);
         };
         
         var uri = new Uri(NavigationManager.Uri);
@@ -136,7 +136,7 @@
     {
         if (firstRender)
         {
-            await JSRuntime.InvokeVoidAsync("initHome");
+            await JsRuntime.InvokeVoidAsync("initHome");
         }
     }
 

@@ -1,7 +1,7 @@
 ﻿@using INIManagerServer.Components.Models
 @using INIManagerServer.Components.Services
-@inject ConfigurationDraftService _configurationDraftService
-@inject NavigationManager _navigationManager
+@inject ConfigurationDraftService ConfigurationDraftService
+@inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 
 <button class="hamburger-btn">
@@ -47,7 +47,7 @@
         switch (id)
         {
             case 1:
-                _navigationManager.NavigateTo("/Home");
+                NavigationManager.NavigateTo("/Home");
                 break;
             case 2:
                 do
@@ -55,20 +55,20 @@
                     do
                     {
                         _id = Random.Shared.Next(1, 10000000);
-                    } while ((await _configurationDraftService.ReadConfigurationById(_id)).Id == _id);
+                    } while ((await ConfigurationDraftService.ReadConfigurationById(_id)).Id == _id);
 
-                    var result = await _configurationDraftService.CreateConfiguration(_id);
+                    var result = await ConfigurationDraftService.CreateConfiguration(_id);
 
                     if (result)
                     {
-                        _navigationManager.NavigateTo($"Configurator/{_id}?from=NavMenu");
+                        NavigationManager.NavigateTo($"Configurator/{_id}?from=NavMenu");
                         break;
                     }
                 } while (true);
 
                 break;
             case 3:
-                _navigationManager.NavigateTo("/Settings");
+                NavigationManager.NavigateTo("/Settings");
                 break;
         }
     }
