@@ -44,11 +44,25 @@
         });
     });
 
+
     // Close sidebar when window is resized to desktop
     window.addEventListener('resize', () => {
         if (window.innerWidth > 768) {
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
+        }
+    });
+};
+
+window.handleRouteChange = function (newUrl) {
+    console.log("Route changed to:", newUrl);
+    
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(navItem => navItem.classList.remove('active'));
+    navItems.forEach(item => {
+
+        if (newUrl.toLowerCase().includes(item.id)) {
+            item.classList.add('active');
         }
     });
 };

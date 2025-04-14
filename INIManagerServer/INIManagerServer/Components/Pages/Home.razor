@@ -1,4 +1,5 @@
 ﻿@page "/"
+@page "/Home"
 @using INIManagerServer.Components.Models
 @using INIManagerServer.Components.Pages.Dialogs
 @using INIManagerServer.Components.Services
@@ -115,15 +116,18 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _configurationDrafts = await ConfigurationDraftService.ReadConfiguration();
-        _configurations = await ConfigurationService.ReadConfiguration();
-
+        NavigationManager.LocationChanged += (sender, args) =>
+        {
+            JSRuntime.InvokeVoidAsync("handleRouteChange", args.Location);
+        };
+        
         var uri = new Uri(NavigationManager.Uri);
-
         var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
         var value = query.GetValueOrDefault("noorigin");
-
         if (value == "true") await OpenError_Dialog_NoOriginFound_Async();
+
+        _configurationDrafts = await ConfigurationDraftService.ReadConfiguration();
+        _configurations = await ConfigurationService.ReadConfiguration();
 
         await base.OnInitializedAsync();
     }
@@ -140,7 +144,7 @@
     {
         Console.WriteLine(id);
         Task.Delay(100);
-        NavigationManager.NavigateTo($"/Configurator/{id}?from=Home");
+        NavigationManager.NavigateTo($"/Configurator/{id}?from=Start");
     }
 
     void Export(int id)

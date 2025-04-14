@@ -1,6 +1,7 @@
 ﻿@page "/Settings"
 @inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
+@inject NavigationManager NavigationManager
 
 <div class="settings-container">
     <div class="settings-content">
@@ -87,7 +88,17 @@
 </div>
 
 @code {
-
+    
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManager.LocationChanged += (sender, args) =>
+        {
+            JsRuntime.InvokeVoidAsync("handleRouteChange", args.Location);
+        };
+        
+        await base.OnInitializedAsync();
+    }
+    
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)

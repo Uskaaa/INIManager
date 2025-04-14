@@ -190,7 +190,7 @@ public class ConfigurationService : IConfigurationService
                 using var command2 = new MySqlCommand(
                     "UPDATE configws SET workstationid = @workstationid WHERE configurationid = @configurationid;",
                     _dbConnector.GetConnection());
-                command2.Parameters.AddWithValue("@configurationid", id);
+                command2.Parameters.AddWithValue("@configurationid", configuration.Id);
                 command2.Parameters.AddWithValue("@workstationid", workstation.Id);
                 await command2.ExecuteNonQueryAsync();
             }
