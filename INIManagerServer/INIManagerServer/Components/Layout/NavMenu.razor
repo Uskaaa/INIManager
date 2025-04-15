@@ -52,20 +52,10 @@
             case 2:
                 do
                 {
-                    do
-                    {
-                        _id = Random.Shared.Next(1, 10000000);
-                    } while ((await ConfigurationDraftService.ReadConfigurationById(_id)).Id == _id);
+                    _id = Random.Shared.Next(1, 10000000);
+                } while ((await ConfigurationDraftService.ReadConfigurationById(_id)).Id == _id);
 
-                    var result = await ConfigurationDraftService.CreateConfiguration(_id);
-
-                    if (result)
-                    {
-                        NavigationManager.NavigateTo($"Configurator/{_id}?from=NavMenu");
-                        break;
-                    }
-                } while (true);
-
+                NavigationManager.NavigateTo($"Configurator/{_id}?from=NavMenu");
                 break;
             case 3:
                 NavigationManager.NavigateTo("/Settings");

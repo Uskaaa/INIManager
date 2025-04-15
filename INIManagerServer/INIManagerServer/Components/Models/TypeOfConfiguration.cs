@@ -2,6 +2,7 @@
 
 public enum TypeOfConfiguration
 {
+    Empty,
     Draft,
-    Active
+    Finished
 }

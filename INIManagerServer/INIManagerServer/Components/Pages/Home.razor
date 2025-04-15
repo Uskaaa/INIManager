@@ -47,12 +47,12 @@
                         <td>@configuration.Timestamp</td>
                         <td>
                             <div class="action-buttons">
-                                <button class="btn btn-edit" title="Edit" @onclick="() => Edit(configuration.Id)"><i
+                                <button class="btn btn-edit" title="Edit" @onclick="() => EditDraft(configuration.Id)"><i
                                         class="fas fa-edit"></i></button>
-                                <button class="btn btn-export" title="Export" @onclick="() => Export(configuration.Id)">
+                                <button class="btn btn-export" title="Export" @onclick="() => ExportDraft(configuration.Id)">
                                     <i class="fas fa-file-export"></i>
                                 </button>
-                                <button class="btn btn-delete" title="Delete" @onclick="() => Delete(configuration.Id)">
+                                <button class="btn btn-delete" title="Delete" @onclick="() => DeleteDraft(configuration.Id)">
                                     <i class="fas fa-trash"></i></button>
                             </div>
                         </td>
@@ -140,11 +140,26 @@
         }
     }
 
+    void EditDraft(int id)
+    {
+        Console.WriteLine(id);
+        Task.Delay(100);
+        NavigationManager.NavigateTo($"/Configurator/{id}?from=Draft");
+    }
+
+    void ExportDraft(int id)
+    {
+    }
+
+    void DeleteDraft(int id)
+    {
+    }
+    
     void Edit(int id)
     {
         Console.WriteLine(id);
         Task.Delay(100);
-        NavigationManager.NavigateTo($"/Configurator/{id}?from=Start");
+        NavigationManager.NavigateTo($"/Configurator/{id}?from=Finished");
     }
 
     void Export(int id)

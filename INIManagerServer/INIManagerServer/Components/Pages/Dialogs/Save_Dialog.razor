@@ -1,8 +1,10 @@
 ﻿@rendermode InteractiveServer
 @using INIManagerServer.Components.Models
+@using INIManagerServer.Components.Services
 @using INIManagerServer.Components.Services.Interfaces
 @inject NavigationManager NavigationManager
 @inject IConfigurationService ConfigurationService
+@inject ConfigurationDraftService ConfigurationDraftService
 
 <MudDialog Style="width: 500px;">
     <DialogContent>
@@ -31,9 +33,10 @@
 
     string Timestamp = DateTime.Now.ToString("yyyy-MM-dd");
 
-    private void Submit()
+    private async void Submit()
     {
-        ConfigurationService.CreateConfiguration(Configuration);
+        if (Configuration.Type == TypeOfConfiguration.Draft) await ConfigurationDraftService.CreateConfiguration(Configuration);
+        else if (Configuration.Type == TypeOfConfiguration.Finished) await ConfigurationService.CreateConfiguration(Configuration);
         MudDialog.Close(DialogResult.Ok(true));
     }
 

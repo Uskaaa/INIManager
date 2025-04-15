@@ -21,8 +21,9 @@ public class ConfigurationService : IConfigurationService
         {
             await _dbConnector.OpenConnectionAsync();
             using var command = new MySqlCommand(
-                "INSERT INTO configuration (bezeichnung, timestamp) VALUES (@bezeichnung, @timestamp);",
+                "INSERT INTO configuration (id, bezeichnung, timestamp) VALUES (@id, @bezeichnung, @timestamp) ON DUPLIACTE KEY UPDATE bezeichnung = @bezeichnung, timestamp = @timestamp;",
                 _dbConnector.GetConnection());
+            command.Parameters.AddWithValue("@id", configuration.Id);
             command.Parameters.AddWithValue("@bezeichnung", configuration.Bezeichnung);
             command.Parameters.AddWithValue("@timestamp", configuration.Timestamp);
             await command.ExecuteNonQueryAsync();
@@ -32,9 +33,9 @@ public class ConfigurationService : IConfigurationService
             foreach (var workstation in configuration.Workstations)
             {
                 using var command3 = new MySqlCommand(
-                    "INSERT INTO configws (configurationid, workstationid) VALUES (@configurationid, @workstationid);",
+                    "INSERT INTO configws (configurationid, workstationid) VALUES (@configurationid, @workstationid) ON DUPLIACTE KEY UPDATE configurationid = @configurationid, workstationid = @workstationid;",
                     _dbConnector.GetConnection());
-                command3.Parameters.AddWithValue("@configurationid", id);
+                command3.Parameters.AddWithValue("@configurationid", configuration.Id);
                 command3.Parameters.AddWithValue("@workstationid", workstation.Id);
                 await command3.ExecuteNonQueryAsync();
             }

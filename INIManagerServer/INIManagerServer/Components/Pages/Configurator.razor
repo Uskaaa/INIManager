@@ -58,7 +58,7 @@
     </div>
     <div class="preview-footer">
         <div class="action-buttons">
-            <button id="save-draft">Save Draft</button>
+            <button @onclick="SaveDraft" id="save-draft">Save Draft</button>
             <button @onclick="Save" id="save">Save</button>
             <button id="export">Export</button>
         </div>
@@ -78,10 +78,10 @@
     private string _autoSave = "Draft saved!";
     private bool _autoSaved = true;
     private Timer? _timer;
-    
-    private static DateOnly _time = DateOnly.FromDateTime(DateTime.Now);
-    private string _currentDateTime = $"{_time.DayOfWeek.ToString()}, {_time}";
-    
+
+    private static readonly DateOnly Time = DateOnly.FromDateTime(DateTime.Now);
+    private readonly string _currentDateTime = $"{Time.DayOfWeek.ToString()}, {Time}";
+
     private Configuration _configuration = new();
     private List<Workstation> _workstations = [];
 
@@ -97,34 +97,42 @@
 
     protected override async Task OnInitializedAsync()
     {
-        NavigationManager.LocationChanged += (sender, args) =>
-        {
-            JsRuntime.InvokeVoidAsync("handleRouteChange", args.Location);
-        };
-        
-        var uri = new Uri(NavigationManager.Uri);
+        NavigationManager.LocationChanged += (sender, args) => { JsRuntime.InvokeVoidAsync("handleRouteChange", args.Location); };
 
         _workstations = await WorkstationService.ReadWorkstation();
 
+        var uri = new Uri(NavigationManager.Uri);
         var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
         var value = query.GetValueOrDefault("from");
 
-        if (value == "NavMenu")
+        switch (value)
         {
-            _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
-            _configuration.Type = TypeOfConfiguration.Draft;
-            _configuration.Id = Convert.ToInt32(Id);
-            _configuration.Bezeichnung = $"Configuration-Draft-{Id}";
-        }
-        else if (value == "Start")
-        {
-            _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id));
-            if (string.IsNullOrEmpty(_configuration.Bezeichnung))
-            {
-                _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
-            }
+            case "NavMenu":
+                _configuration.Id = Convert.ToInt32(Id);
+                _configuration.Bezeichnung = $"Configuration-Draft-{Id}";
+                _configuration.Timestamp = DateTime.Now.ToString("yyyy-MM-dd");
+                _configuration.Type = TypeOfConfiguration.Empty;
+                break;
 
-            _configuration.Type = TypeOfConfiguration.Active;
+            case "Draft":
+                _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
+                if (string.IsNullOrEmpty(_configuration.Bezeichnung))
+                {
+                    _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
+                }
+
+                _configuration.Type = TypeOfConfiguration.Draft;
+                break;
+
+            case "Finished":
+                _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id));
+                if (string.IsNullOrEmpty(_configuration.Bezeichnung))
+                {
+                    _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
+                }
+
+                _configuration.Type = TypeOfConfiguration.Finished;
+                break;
         }
 
         await base.OnInitializedAsync();
@@ -136,7 +144,6 @@
         {
             await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
         }
-        
     }
 
     [JSInvokable]
@@ -154,12 +161,18 @@
     async void AutoSave()
     {
         var result = false;
-        if (_configuration.Type == TypeOfConfiguration.Draft) result = await ConfigurationDraftService.UpdateConfiguration(_configuration);
-        else if (_configuration.Type == TypeOfConfiguration.Active) result = await ConfigurationService.UpdateConfiguration(_configuration);
+        if (_configuration.Type == TypeOfConfiguration.Empty) result = await ConfigurationDraftService.CreateConfiguration(_configuration);
+        else if (_configuration.Type == TypeOfConfiguration.Draft) result = await ConfigurationDraftService.CreateConfiguration(_configuration);
+        else if (_configuration.Type == TypeOfConfiguration.Finished) result = await ConfigurationService.CreateConfiguration(_configuration);
 
         if (result)
         {
-            _autoSave = "Draft saved!";
+            if (_configuration.Type is TypeOfConfiguration.Draft or TypeOfConfiguration.Empty)
+            {
+                _autoSave = "Draft saved!";
+                _configuration.Type = TypeOfConfiguration.Draft;
+            }
+            else if (_configuration.Type == TypeOfConfiguration.Finished) _autoSave = "Configuration saved!";
             _autoSaved = true;
             await _autoSaveStatusComponent.UpdateStatus(_autoSaved, _autoSave);
         }
@@ -171,8 +184,26 @@
         }
     }
 
-    void SaveDraft()
+    async void SaveDraft()
     {
+        var workstationList = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
+
+        if (workstationList.Length != 0)
+        {
+            List<Workstation> workstations = [];
+            foreach (var workstation in _workstations)
+            {
+                foreach (var workstationL in workstationList)
+                {
+                    if (workstation.Name == workstationL)
+                    {
+                        _configuration.Workstations.Add(workstation);
+                    }
+                }
+            }
+        }
+
+        await OpenSave_Dialog_Async();
     }
 
     async void Save()

@@ -13,12 +13,7 @@ else
 @code {
     [Parameter] public bool AutoSaved { get; set; }
     [Parameter] public string AutoSaveText { get; set; }
-
-    protected override bool ShouldRender()
-    {
-        return true;
-    }
-
+    
     public async Task UpdateStatus(bool saved, string text)
     {
         AutoSaved = saved;
