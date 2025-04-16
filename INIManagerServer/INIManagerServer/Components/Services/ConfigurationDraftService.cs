@@ -21,8 +21,9 @@ public class ConfigurationDraftService : IConfigurationService
         {
             await _dbConnector.OpenConnectionAsync();
             using var command = new MySqlCommand(
-                "INSERT INTO configuration_draft (bezeichnung, timestamp) VALUES (@bezeichnung, @timestamp);",
+                "INSERT INTO configuration_draft (id, bezeichnung, timestamp) VALUES (@id, @bezeichnung, @timestamp) ON DUPLIACTE KEY UPDATE bezeichnung = @bezeichnung, timestamp = @timestamp;",
                 _dbConnector.GetConnection());
+            command.Parameters.AddWithValue("@id", configuration.Id);
             command.Parameters.AddWithValue("@bezeichnung", configuration.Bezeichnung);
             command.Parameters.AddWithValue("@timestamp", configuration.Timestamp);
             await command.ExecuteNonQueryAsync();
@@ -32,9 +33,9 @@ public class ConfigurationDraftService : IConfigurationService
             foreach (var workstation in configuration.Workstations)
             {
                 using var command3 = new MySqlCommand(
-                    "INSERT INTO configws (configurationdraftid, workstationid) VALUES (@configurationdraftid, @workstationid);",
+                    "INSERT INTO configws (configurationdraftid, workstationid) VALUES (@configurationdraftid, @workstationid) ON DUPLIACTE KEY UPDATE configurationdraftid = @configurationdraftid, workstationid = @workstationid;",
                     _dbConnector.GetConnection());
-                command3.Parameters.AddWithValue("@configurationdraftid", id);
+                command3.Parameters.AddWithValue("@configurationdraftid", configuration.Id);
                 command3.Parameters.AddWithValue("@workstationid", workstation.Id);
                 await command3.ExecuteNonQueryAsync();
             }
@@ -51,27 +52,27 @@ public class ConfigurationDraftService : IConfigurationService
         return true;
     }
     
-    public async Task<bool> CreateConfiguration(int id)
-    {
-        try
-        {
-            await _dbConnector.OpenConnectionAsync();
-            using var command = new MySqlCommand(
-                "INSERT INTO configuration_draft (id) VALUES (@id) ",
-                _dbConnector.GetConnection());
-            command.Parameters.AddWithValue("@id", id);
-            await command.ExecuteNonQueryAsync();
-            await _dbConnector.CloseConnectionAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-            return false;
-        }
-
-        Console.WriteLine("Erstellt!");
-        return true;
-    }
+    // public async Task<bool> CreateConfiguration(int id)
+    // {
+    //     try
+    //     {
+    //         await _dbConnector.OpenConnectionAsync();
+    //         using var command = new MySqlCommand(
+    //             "INSERT INTO configuration_draft (id) VALUES (@id) ",
+    //             _dbConnector.GetConnection());
+    //         command.Parameters.AddWithValue("@id", id);
+    //         await command.ExecuteNonQueryAsync();
+    //         await _dbConnector.CloseConnectionAsync();
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Console.WriteLine(ex.Message);
+    //         return false;
+    //     }
+    //
+    //     Console.WriteLine("Erstellt!");
+    //     return true;
+    // }
 
     public async Task<List<Configuration>> ReadConfiguration()
     {

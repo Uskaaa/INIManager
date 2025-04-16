@@ -116,21 +116,11 @@
 
             case "Draft":
                 _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
-                if (string.IsNullOrEmpty(_configuration.Bezeichnung))
-                {
-                    _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
-                }
-
                 _configuration.Type = TypeOfConfiguration.Draft;
                 break;
 
             case "Finished":
                 _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id));
-                if (string.IsNullOrEmpty(_configuration.Bezeichnung))
-                {
-                    _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
-                }
-
                 _configuration.Type = TypeOfConfiguration.Finished;
                 break;
         }
