@@ -16,29 +16,27 @@ public class ConfigurationService : IConfigurationService
 
     public async Task<bool> CreateConfiguration(Configuration configuration)
     {
-        long id = 0;
         try
         {
             await _dbConnector.OpenConnectionAsync();
             using var command = new MySqlCommand(
-                "INSERT INTO configuration (id, bezeichnung, timestamp) VALUES (@id, @bezeichnung, @timestamp) ON DUPLIACTE KEY UPDATE bezeichnung = @bezeichnung, timestamp = @timestamp;",
+                "INSERT INTO configuration (id, bezeichnung, timestamp) VALUES (@id, @bezeichnung, @timestamp) ON DUPLICATE KEY UPDATE bezeichnung = @bezeichnung, timestamp = @timestamp;",
                 _dbConnector.GetConnection());
             command.Parameters.AddWithValue("@id", configuration.Id);
             command.Parameters.AddWithValue("@bezeichnung", configuration.Bezeichnung);
             command.Parameters.AddWithValue("@timestamp", configuration.Timestamp);
             await command.ExecuteNonQueryAsync();
-            
-            id = command.LastInsertedId;
 
-            foreach (var workstation in configuration.Workstations)
-            {
-                using var command3 = new MySqlCommand(
-                    "INSERT INTO configws (configurationid, workstationid) VALUES (@configurationid, @workstationid) ON DUPLIACTE KEY UPDATE configurationid = @configurationid, workstationid = @workstationid;",
-                    _dbConnector.GetConnection());
-                command3.Parameters.AddWithValue("@configurationid", configuration.Id);
-                command3.Parameters.AddWithValue("@workstationid", workstation.Id);
-                await command3.ExecuteNonQueryAsync();
-            }
+            if (configuration.Workstations != null)
+                foreach (var workstation in configuration.Workstations)
+                {
+                    using var command3 = new MySqlCommand(
+                        "INSERT INTO configws (configurationid, workstationid) VALUES (@configurationid, @workstationid);",
+                        _dbConnector.GetConnection());
+                    command3.Parameters.AddWithValue("@configurationid", configuration.Id);
+                    command3.Parameters.AddWithValue("@workstationid", workstation.Id);
+                    await command3.ExecuteNonQueryAsync();
+                }
 
             await _dbConnector.CloseConnectionAsync();
         }

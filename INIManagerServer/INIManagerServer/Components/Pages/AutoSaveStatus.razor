@@ -1,22 +1,29 @@
-﻿@using Variant = Radzen.Variant
+﻿@using INIManagerServer.Components.Models
+@using Variant = Radzen.Variant
 
-@if (AutoSaved)
+@switch (AutoSaveType)
 {
-    <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Default" />
-}
-else
-{
-    <MudProgressCircular Size="Size.Small" Style="color: #151A2D;" Indeterminate="true" />
+    case AutoSaveType.Error:
+        <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Default" />
+        break;
+    case AutoSaveType.Saving:
+        <MudProgressCircular Size="Size.Small" Style="color: #151A2D;" Indeterminate="true" />
+        break;
+    case AutoSaveType.Saved:
+        <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Default" />
+        break;
+    default:
+        throw new ArgumentOutOfRangeException();
 }
 <RadzenBadge Style="color: black;" Variant="Variant.Text" Text="@AutoSaveText" />
 
 @code {
-    [Parameter] public bool AutoSaved { get; set; }
+    [Parameter] public AutoSaveType AutoSaveType { get; set; }
     [Parameter] public string AutoSaveText { get; set; }
     
-    public async Task UpdateStatus(bool saved, string text)
+    public async Task UpdateStatus(AutoSaveType autoSaveType, string text)
     {
-        AutoSaved = saved;
+        AutoSaveType = autoSaveType;
         AutoSaveText = text;
         await InvokeAsync(StateHasChanged);
     }

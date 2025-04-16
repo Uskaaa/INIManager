@@ -46,7 +46,7 @@
     </div>
     <div class="drag-footer">
         <div class="draft">
-            <AutoSaveStatus @ref="_autoSaveStatusComponent" AutoSaved="_autoSaved" AutoSaveText="@_autoSave"/>
+            <AutoSaveStatus @ref="_autoSaveStatusComponent" AutoSaveType="_autoSaveType" AutoSaveText="@_autoSave"/>
         </div>
     </div>
     <div class="preview-header">
@@ -75,9 +75,11 @@
     [Parameter] public string Id { get; set; }
 
     private AutoSaveStatus _autoSaveStatusComponent;
-    private string _autoSave = "Draft saved!";
-    private bool _autoSaved = true;
+    private string _autoSave = "Draft not saved!";
+    private AutoSaveType _autoSaveType = AutoSaveType.Error;
     private Timer? _timer;
+    private readonly SemaphoreSlim _saveLock = new(1, 1);
+    private bool _autoSavePending = false;
 
     private static readonly DateOnly Time = DateOnly.FromDateTime(DateTime.Now);
     private readonly string _currentDateTime = $"{Time.DayOfWeek.ToString()}, {Time}";
@@ -111,7 +113,7 @@
                 _configuration.Id = Convert.ToInt32(Id);
                 _configuration.Bezeichnung = $"Configuration-Draft-{Id}";
                 _configuration.Timestamp = DateTime.Now.ToString("yyyy-MM-dd");
-                _configuration.Type = TypeOfConfiguration.Empty;
+                _configuration.Type = TypeOfConfiguration.Draft;
                 break;
 
             case "Draft":
@@ -139,94 +141,170 @@
     [JSInvokable]
     public async Task OnUserInteraction()
     {
-        if (_autoSaved != true) return;
+        if (_autoSavePending) return;
         _timer?.Dispose();
-        _autoSave = "Saving draft...";
-        _autoSaved = false;
+        if (_configuration.Type == TypeOfConfiguration.Draft) _autoSave = "Saving draft...";
+        else if (_configuration.Type == TypeOfConfiguration.Finished) _autoSave = "Saving configuration...";
+        _autoSaveType = AutoSaveType.Saving;
+        await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
         _configuration.Timestamp = DateTime.Now.ToString("yyyy-MM-dd");
+        _autoSavePending = true;
         _timer = new Timer(_ => AutoSave(), null, 5000, Timeout.Infinite);
-        await _autoSaveStatusComponent.UpdateStatus(_autoSaved, _autoSave);
     }
 
     async void AutoSave()
     {
-        var result = false;
-        if (_configuration.Type == TypeOfConfiguration.Empty) result = await ConfigurationDraftService.CreateConfiguration(_configuration);
-        else if (_configuration.Type == TypeOfConfiguration.Draft) result = await ConfigurationDraftService.CreateConfiguration(_configuration);
-        else if (_configuration.Type == TypeOfConfiguration.Finished) result = await ConfigurationService.CreateConfiguration(_configuration);
-
-        if (result)
-        {
-            if (_configuration.Type is TypeOfConfiguration.Draft or TypeOfConfiguration.Empty)
+        if (!await _saveLock.WaitAsync(1))
+            if (!_autoSavePending)
             {
-                _autoSave = "Draft saved!";
-                _configuration.Type = TypeOfConfiguration.Draft;
+                _autoSave = "Draft not saved!";
+                _autoSaveType = AutoSaveType.Error;
+                await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
+                return;
             }
-            else if (_configuration.Type == TypeOfConfiguration.Finished) _autoSave = "Configuration saved!";
-            _autoSaved = true;
-            await _autoSaveStatusComponent.UpdateStatus(_autoSaved, _autoSave);
-        }
-        else
+
+        try
         {
-            _autoSave = "Draft not saved!";
-            _autoSaved = false;
-            await _autoSaveStatusComponent.UpdateStatus(_autoSaved, _autoSave);
+            var result = false;
+            if (_configuration.Type == TypeOfConfiguration.Draft) result = await ConfigurationDraftService.CreateConfiguration(_configuration);
+            else if (_configuration.Type == TypeOfConfiguration.Finished) result = await ConfigurationService.CreateConfiguration(_configuration);
+
+            if (result)
+            {
+                if (_configuration.Type is TypeOfConfiguration.Draft)
+                {
+                    _autoSave = "Draft saved!";
+                }
+                else if (_configuration.Type == TypeOfConfiguration.Finished)
+                {
+                    _autoSave = "Configuration saved!";
+                }
+
+                _autoSaveType = AutoSaveType.Saved;
+                await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
+            }
+            else
+            {
+                if (_configuration.Type == TypeOfConfiguration.Draft) _autoSave = "Draft not saved!";
+                if (_configuration.Type == TypeOfConfiguration.Finished) _autoSave = "Configuration not saved!";
+                _autoSaveType = AutoSaveType.Error;
+                await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+        finally
+        {
+            _saveLock.Release();
+            _autoSavePending = false;
         }
     }
 
     async void SaveDraft()
     {
-        var workstationList = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
-
-        if (workstationList.Length != 0)
+        if (_autoSavePending)
         {
-            List<Workstation> workstations = [];
-            foreach (var workstation in _workstations)
+            _autoSavePending = false;
+            _timer?.Dispose();
+            _autoSave = "Draft not saved!";
+            _autoSaveType = AutoSaveType.Error;
+            await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
+        }
+        await _saveLock.WaitAsync();
+        try
+        {
+            var workstationList = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
+
+            if (workstationList.Length != 0)
             {
-                foreach (var workstationL in workstationList)
+                List<Workstation> workstations = [];
+                foreach (var workstation in _workstations)
                 {
-                    if (workstation.Name == workstationL)
+                    foreach (var workstationL in workstationList)
                     {
-                        _configuration.Workstations.Add(workstation);
+                        if (workstation.Name == workstationL)
+                        {
+                            workstations.Add(workstation);
+                        }
                     }
                 }
-            }
-        }
 
-        await OpenSave_Dialog_Async();
+                _configuration.Workstations = workstations;
+            }
+
+            await OpenSave_Dialog_Async(true);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+        finally
+        {
+            _saveLock.Release();
+        }
     }
 
     async void Save()
     {
-        var workstationList = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
-
-        if (workstationList.Length != 0)
+        if (_autoSavePending)
         {
-            List<Workstation> workstations = [];
-            foreach (var workstation in _workstations)
+            _autoSavePending = false;
+            _timer?.Dispose();
+            if (_configuration.Type == TypeOfConfiguration.Draft) _autoSave = "Draft not saved!";
+            if (_configuration.Type == TypeOfConfiguration.Finished) _autoSave = "Configuration not saved!";
+            _autoSaveType = AutoSaveType.Error;
+            await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
+        }
+        await _saveLock.WaitAsync();
+        try
+        {
+            var workstationList = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
+
+            if (workstationList.Length != 0)
             {
-                foreach (var workstationL in workstationList)
+                List<Workstation> workstations = [];
+                foreach (var workstation in _workstations)
                 {
-                    if (workstation.Name == workstationL)
+                    foreach (var workstationL in workstationList)
                     {
-                        _configuration.Workstations.Add(workstation);
+                        if (workstation.Name == workstationL)
+                        {
+                            workstations.Add(workstation);
+                        }
                     }
                 }
-            }
-        }
 
-        await OpenSave_Dialog_Async();
+                _configuration.Workstations = workstations;
+            }
+
+            await OpenSave_Dialog_Async(false);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+        finally
+        {
+            _saveLock.Release();
+        }
     }
 
     void Export()
     {
     }
 
-    private Task OpenSave_Dialog_Async()
+    private Task OpenSave_Dialog_Async(bool draft)
     {
         var parameters = new DialogParameters
         {
             { "Configuration", _configuration },
+            { "Draft", draft },
+            { "AutoSaveStatus" , _autoSaveStatusComponent }
         };
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
         return DialogService.ShowAsync<Save_Dialog>("Save", parameters, options);

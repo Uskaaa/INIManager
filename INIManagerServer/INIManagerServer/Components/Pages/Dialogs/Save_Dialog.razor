@@ -30,13 +30,28 @@
     
     [Parameter]
     public Configuration Configuration { get; set; }
+    
+    [Parameter]
+    public bool Draft { get; set; }
+    
+    [Parameter]
+    public AutoSaveStatus AutoSaveStatus { get; set; }
 
     string Timestamp = DateTime.Now.ToString("yyyy-MM-dd");
 
     private async void Submit()
     {
-        if (Configuration.Type == TypeOfConfiguration.Draft) await ConfigurationDraftService.CreateConfiguration(Configuration);
-        else if (Configuration.Type == TypeOfConfiguration.Finished) await ConfigurationService.CreateConfiguration(Configuration);
+        if (Draft)
+        {
+            await ConfigurationDraftService.CreateConfiguration(Configuration);
+            await AutoSaveStatus.UpdateStatus(AutoSaveType.Saved, "Draft saved!");
+        }
+        else
+        {
+            await ConfigurationService.CreateConfiguration(Configuration);
+            Configuration.Type = TypeOfConfiguration.Finished;
+            await AutoSaveStatus.UpdateStatus(AutoSaveType.Saved, "Configuration saved!");
+        }
         MudDialog.Close(DialogResult.Ok(true));
     }
 
