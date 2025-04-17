@@ -19,7 +19,7 @@ public class ConfigurationService : IConfigurationService
         try
         {
             await _dbConnector.OpenConnectionAsync();
-            using var command = new MySqlCommand(
+            await using var command = new MySqlCommand(
                 "INSERT INTO configuration (id, bezeichnung, timestamp) VALUES (@id, @bezeichnung, @timestamp) ON DUPLICATE KEY UPDATE bezeichnung = @bezeichnung, timestamp = @timestamp;",
                 _dbConnector.GetConnection());
             command.Parameters.AddWithValue("@id", configuration.Id);
@@ -28,9 +28,11 @@ public class ConfigurationService : IConfigurationService
             await command.ExecuteNonQueryAsync();
 
             if (configuration.Workstations != null)
+            {
+                configuration.Workstations.RemoveAll(x => x.IsSaved);
                 foreach (var workstation in configuration.Workstations)
                 {
-                    using var command3 = new MySqlCommand(
+                    await using var command3 = new MySqlCommand(
                         "INSERT INTO configws (configurationid, workstationid) VALUES (@configurationid, @workstationid);",
                         _dbConnector.GetConnection());
                     command3.Parameters.AddWithValue("@configurationid", configuration.Id);
@@ -38,7 +40,8 @@ public class ConfigurationService : IConfigurationService
                     await command3.ExecuteNonQueryAsync();
                 }
 
-            await _dbConnector.CloseConnectionAsync();
+                await _dbConnector.CloseConnectionAsync();
+            }
         }
         catch (Exception ex)
         {
@@ -158,13 +161,14 @@ public class ConfigurationService : IConfigurationService
                     Id = reader2.GetInt32("id"),
                     Name = reader2.GetString("name"),
                     Description = reader2.GetString("description"),
+                    IsSaved = true
                 });
             }
 
             configuration.Workstations = workstations;
         }
         await _dbConnector.CloseConnectionAsync();
-
+        
         return configuration;
     }
 

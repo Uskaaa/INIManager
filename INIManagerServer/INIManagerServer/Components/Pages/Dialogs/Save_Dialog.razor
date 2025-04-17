@@ -48,7 +48,14 @@
         }
         else
         {
-            await ConfigurationService.CreateConfiguration(Configuration);
+            var result = await ConfigurationService.CreateConfiguration(Configuration);
+            if (result)
+            {
+                foreach (var workstation in Configuration.Workstations)
+                {
+                    workstation.IsSaved = true;
+                }
+            }
             Configuration.Type = TypeOfConfiguration.Finished;
             await AutoSaveStatus.UpdateStatus(AutoSaveType.Saved, "Configuration saved!");
         }

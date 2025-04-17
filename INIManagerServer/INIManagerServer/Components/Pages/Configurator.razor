@@ -171,6 +171,8 @@
 
             if (result)
             {
+                SetIsSaved(_configuration);
+                
                 if (_configuration.Type is TypeOfConfiguration.Draft)
                 {
                     _autoSave = "Draft saved!";
@@ -179,7 +181,7 @@
                 {
                     _autoSave = "Configuration saved!";
                 }
-
+                
                 _autoSaveType = AutoSaveType.Saved;
                 await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
             }
@@ -308,6 +310,14 @@
         };
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
         return DialogService.ShowAsync<Save_Dialog>("Save", parameters, options);
+    }
+
+    private void SetIsSaved(Configuration configuration)
+    {
+        foreach (var workstation in configuration.Workstations)
+        {
+            workstation.IsSaved = true;
+        }
     }
 
 }

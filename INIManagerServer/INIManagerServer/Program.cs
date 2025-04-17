@@ -36,6 +36,7 @@ public class Program
         builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
         builder.Services.AddScoped<WorkstationService>();
         builder.Services.AddScoped<ConfigurationDraftService>();
+        builder.Services.AddSingleton<SetSavedService>();
 
         var app = builder.Build();
 
