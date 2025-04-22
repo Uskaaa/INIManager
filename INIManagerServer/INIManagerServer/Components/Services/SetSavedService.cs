@@ -5,14 +5,18 @@ namespace INIManagerServer.Components.Services;
 
 public class SetSavedService
 {
-    private readonly Channel<string> _channel = Channel.CreateUnbounded<string>();
+    private readonly Channel<List<Workstation>> _channel = Channel.CreateUnbounded<List<Workstation>>();
 
-    public async Task PublishAsync(string message)
+    public async Task PublishAsync(List<Workstation> workstations)
     {
-        await _channel.Writer.WriteAsync(message);
+        foreach (var workstation in workstations)
+        {
+            workstation.IsSaved = true;
+        }
+        await _channel.Writer.WriteAsync(workstations);
     }
 
-    public async Task<string?> ListenOnceAsync(CancellationToken token = default)
+    public async Task<List<Workstation>?> ListenOnceAsync(CancellationToken token = default)
     {
         return await _channel.Reader.ReadAsync(token);
     }

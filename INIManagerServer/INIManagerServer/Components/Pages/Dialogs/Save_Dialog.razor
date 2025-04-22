@@ -2,9 +2,9 @@
 @using INIManagerServer.Components.Models
 @using INIManagerServer.Components.Services
 @using INIManagerServer.Components.Services.Interfaces
-@inject NavigationManager NavigationManager
 @inject IConfigurationService ConfigurationService
 @inject ConfigurationDraftService ConfigurationDraftService
+@inject SetSavedService SetSavedService
 
 <MudDialog Style="width: 500px;">
     <DialogContent>
@@ -44,6 +44,7 @@
         if (Draft)
         {
             await ConfigurationDraftService.CreateConfiguration(Configuration);
+            if (Configuration.Workstations != null) await SetSavedService.PublishAsync(Configuration.Workstations);
             await AutoSaveStatus.UpdateStatus(AutoSaveType.Saved, "Draft saved!");
         }
         else
@@ -51,10 +52,7 @@
             var result = await ConfigurationService.CreateConfiguration(Configuration);
             if (result)
             {
-                foreach (var workstation in Configuration.Workstations)
-                {
-                    workstation.IsSaved = true;
-                }
+                if (Configuration.Workstations != null) await SetSavedService.PublishAsync(Configuration.Workstations);
             }
             Configuration.Type = TypeOfConfiguration.Finished;
             await AutoSaveStatus.UpdateStatus(AutoSaveType.Saved, "Configuration saved!");

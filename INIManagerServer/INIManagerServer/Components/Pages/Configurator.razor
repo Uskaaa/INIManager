@@ -12,6 +12,7 @@
 @inject ConfigurationDraftService ConfigurationDraftService
 @inject WorkstationService WorkstationService
 @inject IDialogService DialogService
+@inject SetSavedService SetSavedService
 
 <MudPopoverProvider/>
 <MudDialogProvider/>
@@ -171,8 +172,8 @@
 
             if (result)
             {
-                SetIsSaved(_configuration);
-                
+                if (_configuration.Workstations != null) await SetSavedService.PublishAsync(_configuration.Workstations);
+
                 if (_configuration.Type is TypeOfConfiguration.Draft)
                 {
                     _autoSave = "Draft saved!";
@@ -181,7 +182,7 @@
                 {
                     _autoSave = "Configuration saved!";
                 }
-                
+
                 _autoSaveType = AutoSaveType.Saved;
                 await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
             }
@@ -215,6 +216,7 @@
             _autoSaveType = AutoSaveType.Error;
             await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
         }
+
         await _saveLock.WaitAsync();
         try
         {
@@ -261,26 +263,49 @@
             _autoSaveType = AutoSaveType.Error;
             await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
         }
+
         await _saveLock.WaitAsync();
         try
         {
-            var workstationList = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
-
-            if (workstationList.Length != 0)
+            List<Workstation> savedWorkstations = [];
+            if (_configuration.Workstations != null)
             {
-                List<Workstation> workstations = [];
-                foreach (var workstation in _workstations)
+                savedWorkstations = await SetSavedService.ListenOnceAsync();
+            }
+
+            var workstationNames = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
+
+            if (workstationNames.Length != 0 && savedWorkstations != null)
+            {
+                List<Workstation> configurationWorkstations = [];
+                if (savedWorkstations.Count == 0)
                 {
-                    foreach (var workstationL in workstationList)
+                    foreach (var workstation in _workstations)
                     {
-                        if (workstation.Name == workstationL)
+                        if (workstationNames.Contains(workstation.Name))
                         {
-                            workstations.Add(workstation);
+                            configurationWorkstations.Add(workstation);
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var savedWorkstation in savedWorkstations)
+                    {
+                        var indexToRemove = Array.IndexOf(workstationNames, savedWorkstation.Name);
+                        workstationNames[indexToRemove] = null;
+                    }
+                    
+                    foreach (var workstation in _workstations)
+                    {
+                        if (workstationNames.Contains(workstation.Name))
+                        {
+                            configurationWorkstations.Add(workstation);
                         }
                     }
                 }
 
-                _configuration.Workstations = workstations;
+                _configuration.Workstations = configurationWorkstations;
             }
 
             await OpenSave_Dialog_Async(false);
@@ -306,18 +331,10 @@
         {
             { "Configuration", _configuration },
             { "Draft", draft },
-            { "AutoSaveStatus" , _autoSaveStatusComponent }
+            { "AutoSaveStatus", _autoSaveStatusComponent }
         };
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
         return DialogService.ShowAsync<Save_Dialog>("Save", parameters, options);
-    }
-
-    private void SetIsSaved(Configuration configuration)
-    {
-        foreach (var workstation in configuration.Workstations)
-        {
-            workstation.IsSaved = true;
-        }
     }
 
 }
