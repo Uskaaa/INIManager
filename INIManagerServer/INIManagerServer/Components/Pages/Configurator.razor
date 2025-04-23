@@ -120,11 +120,13 @@
             case "Draft":
                 _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
                 _configuration.Type = TypeOfConfiguration.Draft;
+                _configuration.Workstations?.Any(x => x.IsSaved = true);
                 break;
 
             case "Finished":
                 _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id));
                 _configuration.Type = TypeOfConfiguration.Finished;
+                _configuration.Workstations?.Any(x => x.IsSaved = true);
                 break;
         }
 
@@ -167,6 +169,50 @@
         try
         {
             var result = false;
+            
+            //Autosave
+            List<Workstation> savedWorkstations = [];
+            if (_configuration.Workstations != null)
+            {
+                savedWorkstations = await SetSavedService.ListenOnceAsync();
+            }
+
+            var workstationNames = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
+
+            if (workstationNames.Length != 0 && savedWorkstations != null)
+            {
+                List<Workstation> configurationWorkstations = [];
+                if (savedWorkstations.Count == 0)
+                {
+                    foreach (var workstation in _workstations)
+                    {
+                        if (workstationNames.Contains(workstation.Name))
+                        {
+                            configurationWorkstations.Add(workstation);
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var savedWorkstation in savedWorkstations)
+                    {
+                        var indexToRemove = Array.IndexOf(workstationNames, savedWorkstation.Name);
+                        workstationNames[indexToRemove] = null;
+                    }
+                    
+                    foreach (var workstation in _workstations)
+                    {
+                        if (workstationNames.Contains(workstation.Name))
+                        {
+                            configurationWorkstations.Add(workstation);
+                        }
+                    }
+                }
+
+                _configuration.Workstations = configurationWorkstations;
+            }
+            //Autosave
+            
             if (_configuration.Type == TypeOfConfiguration.Draft) result = await ConfigurationDraftService.CreateConfiguration(_configuration);
             else if (_configuration.Type == TypeOfConfiguration.Finished) result = await ConfigurationService.CreateConfiguration(_configuration);
 
@@ -279,7 +325,7 @@
         await _saveLock.WaitAsync();
         try
         {
-            List<Workstation> savedWorkstations = [];
+            List<Workstation>? savedWorkstations = [];
             if (_configuration.Workstations != null)
             {
                 savedWorkstations = await SetSavedService.ListenOnceAsync();
