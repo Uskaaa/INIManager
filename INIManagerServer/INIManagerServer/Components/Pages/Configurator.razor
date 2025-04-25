@@ -169,7 +169,7 @@
         try
         {
             var result = false;
-            
+
             //Autosave
             List<Workstation> savedWorkstations = [];
             if (_configuration.Workstations != null)
@@ -199,7 +199,7 @@
                         var indexToRemove = Array.IndexOf(workstationNames, savedWorkstation.Name);
                         workstationNames[indexToRemove] = null;
                     }
-                    
+
                     foreach (var workstation in _workstations)
                     {
                         if (workstationNames.Contains(workstation.Name))
@@ -212,7 +212,7 @@
                 _configuration.Workstations = configurationWorkstations;
             }
             //Autosave
-            
+
             if (_configuration.Type == TypeOfConfiguration.Draft) result = await ConfigurationDraftService.CreateConfiguration(_configuration);
             else if (_configuration.Type == TypeOfConfiguration.Finished) result = await ConfigurationService.CreateConfiguration(_configuration);
 
@@ -284,7 +284,7 @@
                         var indexToRemove = Array.IndexOf(workstationNames, savedWorkstation.Name);
                         workstationNames[indexToRemove] = null;
                     }
-                    
+
                     foreach (var workstation in _workstations)
                     {
                         if (workstationNames.Contains(workstation.Name))
@@ -332,10 +332,37 @@
             }
 
             var workstationNames = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
-
-            if (workstationNames.Length != 0 && savedWorkstations != null)
+            List<Workstation> configurationWorkstations = [];
+            if (workstationNames.Length != 0 && savedWorkstations != null && savedWorkstations.Count > workstationNames.Length && savedWorkstations.Count != 0)
             {
-                List<Workstation> configurationWorkstations = [];
+                for (int i = 0; i < savedWorkstations.Count; i++)
+                {
+                    if (i > workstationNames.Length-1)
+                    {
+                        savedWorkstations.RemoveAt(i);
+                    }
+                    else if (savedWorkstations[i].Name != workstationNames[i] && savedWorkstations[i].IsSaved)
+                    {
+                        savedWorkstations.RemoveAt(i);
+                    }
+                }
+                
+                foreach (var savedWorkstation in savedWorkstations)
+                {
+                    var indexToRemove = Array.IndexOf(workstationNames, savedWorkstation.Name);
+                    workstationNames[indexToRemove] = null;
+                }
+
+                foreach (var workstation in _workstations)
+                {
+                    if (workstationNames.Contains(workstation.Name))
+                    {
+                        configurationWorkstations.Add(workstation);
+                    }
+                }
+            }
+            else if (workstationNames.Length != 0 && savedWorkstations != null)
+            {
                 if (savedWorkstations.Count == 0)
                 {
                     foreach (var workstation in _workstations)
@@ -353,7 +380,7 @@
                         var indexToRemove = Array.IndexOf(workstationNames, savedWorkstation.Name);
                         workstationNames[indexToRemove] = null;
                     }
-                    
+
                     foreach (var workstation in _workstations)
                     {
                         if (workstationNames.Contains(workstation.Name))
@@ -373,6 +400,7 @@
             Console.WriteLine(e);
             throw;
         }
+
         finally
         {
             _saveLock.Release();
@@ -392,7 +420,8 @@
             { "AutoSaveStatus", _autoSaveStatusComponent }
         };
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
-        return DialogService.ShowAsync<Save_Dialog>("Save", parameters, options);
+        return DialogService.ShowAsync
+            <Save_Dialog>("Save", parameters, options);
     }
 
 }
