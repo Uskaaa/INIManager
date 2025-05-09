@@ -214,16 +214,45 @@ public class ConfigurationDraftService : IConfigurationService
         {
             await _dbConnector.OpenConnectionAsync();
             using var command = new MySqlCommand(
-                "DELETE FROM configuration WHERE id = @id;",
-                _dbConnector.GetConnection());
-            command.Parameters.AddWithValue("@id", id);
-            await command.ExecuteNonQueryAsync();
-
-            using var command2 = new MySqlCommand(
                 "DELETE FROM configws WHERE configurationdraftid = @id;",
                 _dbConnector.GetConnection());
-            command2.Parameters.AddWithValue("@configurationdraftid", id);
+            command.Parameters.AddWithValue("@configurationdraftid", id);
+            await command.ExecuteNonQueryAsync();
+
+            await _dbConnector.OpenConnectionAsync();
+            using var command2 = new MySqlCommand(
+                "DELETE FROM configuration WHERE id = @id;",
+                _dbConnector.GetConnection());
+            command2.Parameters.AddWithValue("@id", id);
             await command2.ExecuteNonQueryAsync();
+
+            await _dbConnector.CloseConnectionAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return false;
+        }
+
+        Console.WriteLine("Deleted!");
+        return true;
+    }
+
+    public async Task<bool> DeleteWorkstationsOfConfiguration(int configurationid,
+        List<Workstation> workstationsToDelete)
+    {
+        try
+        {
+            await _dbConnector.OpenConnectionAsync();
+            foreach (var workstationToDelete in workstationsToDelete)
+            {
+                using var command = new MySqlCommand(
+                    "DELETE FROM configws WHERE configurationid = @configurationId AND workstationid = @workstationId;",
+                    _dbConnector.GetConnection());
+                command.Parameters.AddWithValue("@configurationId", configurationid);
+                command.Parameters.AddWithValue("@workstationId", workstationToDelete.Id);
+                await command.ExecuteNonQueryAsync();
+            }
 
             await _dbConnector.CloseConnectionAsync();
         }

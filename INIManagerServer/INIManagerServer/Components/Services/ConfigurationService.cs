@@ -70,16 +70,16 @@ public class ConfigurationService : IConfigurationService
                 configurations.Add(new Configuration
                 {
                     Id = reader.GetInt32("id"),
-                    Bezeichnung = reader.IsDBNull(reader.GetOrdinal("bezeichnung")) 
-                        ? string.Empty 
+                    Bezeichnung = reader.IsDBNull(reader.GetOrdinal("bezeichnung"))
+                        ? string.Empty
                         : reader.GetString("bezeichnung"),
-                    Timestamp = reader.IsDBNull(reader.GetOrdinal("timestamp")) 
-                        ? string.Empty 
+                    Timestamp = reader.IsDBNull(reader.GetOrdinal("timestamp"))
+                        ? string.Empty
                         : reader.GetString("timestamp")
                 });
             }
         }
-        
+
         var workstations = new List<Workstation>();
         await using (var command2 = new MySqlCommand(
                          "SELECT workstation.id, workstation.name, workstation.description FROM configws " +
@@ -106,9 +106,9 @@ public class ConfigurationService : IConfigurationService
                 configuration.Workstations = workstations;
             }
         }
-        
+
         await _dbConnector.CloseConnectionAsync();
-        
+
         return configurations;
     }
 
@@ -167,8 +167,9 @@ public class ConfigurationService : IConfigurationService
 
             configuration.Workstations = workstations;
         }
+
         await _dbConnector.CloseConnectionAsync();
-        
+
         return configuration;
     }
 
@@ -216,16 +217,45 @@ public class ConfigurationService : IConfigurationService
         {
             await _dbConnector.OpenConnectionAsync();
             using var command = new MySqlCommand(
-                "DELETE FROM configuration WHERE id = @id;",
-                _dbConnector.GetConnection());
-            command.Parameters.AddWithValue("@id", id);
-            await command.ExecuteNonQueryAsync();
-
-            using var command2 = new MySqlCommand(
                 "DELETE FROM configws WHERE configurationid = @id;",
                 _dbConnector.GetConnection());
-            command2.Parameters.AddWithValue("@configurationid", id);
+            command.Parameters.AddWithValue("@configurationid", id);
+            await command.ExecuteNonQueryAsync();
+
+            await _dbConnector.OpenConnectionAsync();
+            using var command2 = new MySqlCommand(
+                "DELETE FROM configuration WHERE id = @id;",
+                _dbConnector.GetConnection());
+            command2.Parameters.AddWithValue("@id", id);
             await command2.ExecuteNonQueryAsync();
+
+            await _dbConnector.CloseConnectionAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return false;
+        }
+
+        Console.WriteLine("Deleted!");
+        return true;
+    }
+
+    public async Task<bool> DeleteWorkstationsOfConfiguration(int configurationid,
+        List<Workstation> workstationsToDelete)
+    {
+        try
+        {
+            await _dbConnector.OpenConnectionAsync();
+            foreach (var workstationToDelete in workstationsToDelete)
+            {
+                using var command = new MySqlCommand(
+                    "DELETE FROM configws WHERE configurationid = @configurationId AND workstationid = @workstationId;",
+                    _dbConnector.GetConnection());
+                command.Parameters.AddWithValue("@configurationId", configurationid);
+                command.Parameters.AddWithValue("@workstationId", workstationToDelete.Id);
+                await command.ExecuteNonQueryAsync();
+            }
 
             await _dbConnector.CloseConnectionAsync();
         }

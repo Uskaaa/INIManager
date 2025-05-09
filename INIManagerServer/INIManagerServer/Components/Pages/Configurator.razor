@@ -333,65 +333,43 @@
 
             var workstationNames = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
             List<Workstation> configurationWorkstations = [];
-            if (workstationNames.Length != 0 && savedWorkstations != null && savedWorkstations.Count > workstationNames.Length && savedWorkstations.Count != 0)
+            List<Workstation> workstationsToDelete = [];
+            if (savedWorkstations != null)
             {
                 for (int i = 0; i < savedWorkstations.Count; i++)
                 {
-                    if (i > workstationNames.Length-1)
+                    var minimumTrue = 0;
+                    for (int j = 0; j < workstationNames.Length; j++)
                     {
-                        savedWorkstations.RemoveAt(i);
+                        if (savedWorkstations[i].Name == workstationNames[j])
+                        {
+                            workstationNames[j] = null;
+                            minimumTrue = 1;
+                        }
                     }
-                    else if (savedWorkstations[i].Name != workstationNames[i] && savedWorkstations[i].IsSaved)
+                    if (minimumTrue == 0)
                     {
-                        savedWorkstations.RemoveAt(i);
+                        workstationsToDelete.Add(savedWorkstations[i]);
                     }
                 }
-                
-                foreach (var savedWorkstation in savedWorkstations)
-                {
-                    var indexToRemove = Array.IndexOf(workstationNames, savedWorkstation.Name);
-                    workstationNames[indexToRemove] = null;
-                }
+            }
 
-                foreach (var workstation in _workstations)
+            var result = await ConfigurationService.DeleteWorkstationsOfConfiguration(_configuration.Id, workstationsToDelete);
+            
+            if (!result) throw new Exception("Failed to delete workstations from configuration.");
+            
+            foreach (var workstation in _workstations)
+            {
+                foreach (var workstationName in workstationNames)
                 {
-                    if (workstationNames.Contains(workstation.Name))
+                    if (workstation.Name == workstationName)
                     {
                         configurationWorkstations.Add(workstation);
                     }
                 }
             }
-            else if (workstationNames.Length != 0 && savedWorkstations != null)
-            {
-                if (savedWorkstations.Count == 0)
-                {
-                    foreach (var workstation in _workstations)
-                    {
-                        if (workstationNames.Contains(workstation.Name))
-                        {
-                            configurationWorkstations.Add(workstation);
-                        }
-                    }
-                }
-                else
-                {
-                    foreach (var savedWorkstation in savedWorkstations)
-                    {
-                        var indexToRemove = Array.IndexOf(workstationNames, savedWorkstation.Name);
-                        workstationNames[indexToRemove] = null;
-                    }
 
-                    foreach (var workstation in _workstations)
-                    {
-                        if (workstationNames.Contains(workstation.Name))
-                        {
-                            configurationWorkstations.Add(workstation);
-                        }
-                    }
-                }
-
-                _configuration.Workstations = configurationWorkstations;
-            }
+            _configuration.Workstations = configurationWorkstations;
 
             await OpenSave_Dialog_Async(false);
         }
