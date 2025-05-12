@@ -62,10 +62,14 @@
             <button class="preview-tab" data-tab="m2ksys">M2kSys.ini</button>
         </div>
         <div class="preview-views">
-            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab active" id="preview-content-hardware"></textarea>
-            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab" id="preview-content-params"></textarea>
-            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab" id="preview-content-defaults"></textarea>
-            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab" id="preview-content-m2ksys"></textarea>
+            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab active"
+                      id="preview-content-hardware"></textarea>
+            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab"
+                      id="preview-content-params"></textarea>
+            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab"
+                      id="preview-content-defaults"></textarea>
+            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab"
+                      id="preview-content-m2ksys"></textarea>
         </div>
     </div>
     <div class="preview-footer">
@@ -87,8 +91,8 @@
     [Parameter] public string Id { get; set; }
 
     private AutoSaveStatus _autoSaveStatusComponent;
-    private string _autoSave = "Draft not saved!";
     private AutoSaveType _autoSaveType = AutoSaveType.Error;
+    private string _autoSave = "Draft not saved!";
     private Timer? _timer;
     private readonly SemaphoreSlim _saveLock = new(1, 1);
     private bool _autoSavePending = false;
@@ -179,55 +183,60 @@
 
         try
         {
-            var result = false;
-
             //Autosave
-            List<Workstation> savedWorkstations = [];
+            List<Workstation>? savedWorkstations = [];
             if (_configuration.Workstations != null)
             {
                 savedWorkstations = await SetSavedService.ListenOnceAsync();
             }
 
             var workstationNames = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
-
-            if (workstationNames.Length != 0 && savedWorkstations != null)
+            List<Workstation> configurationWorkstations = [];
+            List<Workstation> workstationsToDelete = [];
+            if (savedWorkstations != null)
             {
-                List<Workstation> configurationWorkstations = [];
-                if (savedWorkstations.Count == 0)
+                for (int i = 0; i < savedWorkstations.Count; i++)
                 {
-                    foreach (var workstation in _workstations)
+                    var minimumTrue = 0;
+                    for (int j = 0; j < workstationNames.Length; j++)
                     {
-                        if (workstationNames.Contains(workstation.Name))
+                        if (savedWorkstations[i].Name == workstationNames[j])
                         {
-                            configurationWorkstations.Add(workstation);
+                            workstationNames[j] = null;
+                            minimumTrue = 1;
                         }
                     }
-                }
-                else
-                {
-                    foreach (var savedWorkstation in savedWorkstations)
-                    {
-                        var indexToRemove = Array.IndexOf(workstationNames, savedWorkstation.Name);
-                        workstationNames[indexToRemove] = null;
-                    }
 
-                    foreach (var workstation in _workstations)
+                    if (minimumTrue == 0)
                     {
-                        if (workstationNames.Contains(workstation.Name))
-                        {
-                            configurationWorkstations.Add(workstation);
-                        }
+                        workstationsToDelete.Add(savedWorkstations[i]);
                     }
                 }
-
-                _configuration.Workstations = configurationWorkstations;
             }
+
+            var result = await ConfigurationService.DeleteWorkstationsOfConfiguration(_configuration.Id, workstationsToDelete);
+
+            if (!result) throw new Exception("Failed to delete workstations from configuration.");
+
+            foreach (var workstation in _workstations)
+            {
+                foreach (var workstationName in workstationNames)
+                {
+                    if (workstation.Name == workstationName)
+                    {
+                        configurationWorkstations.Add(workstation);
+                    }
+                }
+            }
+
+            _configuration.Workstations = configurationWorkstations;
             //Autosave
+            var resultAutoSave = false;
 
-            if (_configuration.Type == TypeOfConfiguration.Draft) result = await ConfigurationDraftService.CreateConfiguration(_configuration);
-            else if (_configuration.Type == TypeOfConfiguration.Finished) result = await ConfigurationService.CreateConfiguration(_configuration);
+            if (_configuration.Type == TypeOfConfiguration.Draft) resultAutoSave = await ConfigurationDraftService.CreateConfiguration(_configuration);
+            else if (_configuration.Type == TypeOfConfiguration.Finished) resultAutoSave = await ConfigurationService.CreateConfiguration(_configuration);
 
-            if (result)
+            if (resultAutoSave)
             {
                 if (_configuration.Workstations != null) await SetSavedService.PublishAsync(_configuration.Workstations);
 
@@ -265,56 +274,74 @@
 
     async void SaveDraft()
     {
+        if (_autoSavePending)
+        {
+            _autoSavePending = false;
+            _timer?.Dispose();
+            if (_configuration.Type == TypeOfConfiguration.Draft) _autoSave = "Draft not saved!";
+            if (_configuration.Type == TypeOfConfiguration.Finished) _autoSave = "Configuration not saved!";
+            _autoSaveType = AutoSaveType.Error;
+            await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
+        }
+
+        await _saveLock.WaitAsync();
         try
         {
-            List<Workstation> savedWorkstations = [];
+            List<Workstation>? savedWorkstations = [];
             if (_configuration.Workstations != null)
             {
                 savedWorkstations = await SetSavedService.ListenOnceAsync();
             }
 
             var workstationNames = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
-
-            if (workstationNames.Length != 0 && savedWorkstations != null)
+            List<Workstation> configurationWorkstations = [];
+            List<Workstation> workstationsToDelete = [];
+            if (savedWorkstations != null)
             {
-                List<Workstation> configurationWorkstations = [];
-                if (savedWorkstations.Count == 0)
+                for (int i = 0; i < savedWorkstations.Count; i++)
                 {
-                    foreach (var workstation in _workstations)
+                    var minimumTrue = 0;
+                    for (int j = 0; j < workstationNames.Length; j++)
                     {
-                        if (workstationNames.Contains(workstation.Name))
+                        if (savedWorkstations[i].Name == workstationNames[j])
                         {
-                            configurationWorkstations.Add(workstation);
+                            workstationNames[j] = null;
+                            minimumTrue = 1;
                         }
                     }
-                }
-                else
-                {
-                    foreach (var savedWorkstation in savedWorkstations)
-                    {
-                        var indexToRemove = Array.IndexOf(workstationNames, savedWorkstation.Name);
-                        workstationNames[indexToRemove] = null;
-                    }
 
-                    foreach (var workstation in _workstations)
+                    if (minimumTrue == 0)
                     {
-                        if (workstationNames.Contains(workstation.Name))
-                        {
-                            configurationWorkstations.Add(workstation);
-                        }
+                        workstationsToDelete.Add(savedWorkstations[i]);
                     }
                 }
-
-                _configuration.Workstations = configurationWorkstations;
             }
 
-            await OpenSave_Dialog_Async(false);
+            var result = await ConfigurationService.DeleteWorkstationsOfConfiguration(_configuration.Id, workstationsToDelete);
+
+            if (!result) throw new Exception("Failed to delete workstations from configuration.");
+
+            foreach (var workstation in _workstations)
+            {
+                foreach (var workstationName in workstationNames)
+                {
+                    if (workstation.Name == workstationName)
+                    {
+                        configurationWorkstations.Add(workstation);
+                    }
+                }
+            }
+
+            _configuration.Workstations = configurationWorkstations;
+
+            await OpenSave_Dialog_Async(true);
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
             throw;
         }
+
         finally
         {
             _saveLock.Release();
@@ -358,6 +385,7 @@
                             minimumTrue = 1;
                         }
                     }
+
                     if (minimumTrue == 0)
                     {
                         workstationsToDelete.Add(savedWorkstations[i]);
@@ -366,9 +394,9 @@
             }
 
             var result = await ConfigurationService.DeleteWorkstationsOfConfiguration(_configuration.Id, workstationsToDelete);
-            
+
             if (!result) throw new Exception("Failed to delete workstations from configuration.");
-            
+
             foreach (var workstation in _workstations)
             {
                 foreach (var workstationName in workstationNames)
