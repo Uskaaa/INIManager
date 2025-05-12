@@ -183,7 +183,7 @@
 
         try
         {
-            //Autosave
+            //Autosave logic
             List<Workstation>? savedWorkstations = [];
             if (_configuration.Workstations != null)
             {
@@ -230,7 +230,8 @@
             }
 
             _configuration.Workstations = configurationWorkstations;
-            //Autosave
+            
+            //Autosave status
             var resultAutoSave = false;
 
             if (_configuration.Type == TypeOfConfiguration.Draft) resultAutoSave = await ConfigurationDraftService.CreateConfiguration(_configuration);
@@ -238,13 +239,16 @@
 
             if (resultAutoSave)
             {
+                //Read Configuration and mark saved workstations
+                var resultRead = await ConfigurationDraftService.ReadConfigurationById(_configuration.Id);
+                resultRead?.Workstations.Any(x => x.IsSaved = true);
                 if (_configuration.Workstations != null) await SetSavedService.PublishAsync(_configuration.Workstations);
 
                 if (_configuration.Type is TypeOfConfiguration.Draft)
                 {
                     _autoSave = "Draft saved!";
                 }
-                else if (_configuration.Type == TypeOfConfiguration.Finished)
+                else if (_configuration.Type is TypeOfConfiguration.Finished)
                 {
                     _autoSave = "Configuration saved!";
                 }

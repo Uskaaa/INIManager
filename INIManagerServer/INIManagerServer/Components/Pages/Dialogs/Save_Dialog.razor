@@ -43,17 +43,27 @@
     {
         if (Draft)
         {
-            await ConfigurationDraftService.CreateConfiguration(Configuration);
-            if (Configuration.Workstations != null) await SetSavedService.PublishAsync(Configuration.Workstations);
+            //Create or Update Configuration
+            var resultCreate = await ConfigurationDraftService.CreateConfiguration(Configuration);
+            
+            //Read Configuration and mark saved workstations
+            var resultRead = await ConfigurationDraftService.ReadConfigurationById(Configuration.Id);
+            resultRead?.Workstations.Any(x => x.IsSaved = true);
+            if (resultCreate) if (Configuration.Workstations != null) await SetSavedService.PublishAsync(Configuration.Workstations);
+            
+            Configuration.Type = TypeOfConfiguration.Draft;
             await AutoSaveStatus.UpdateStatus(AutoSaveType.Saved, "Draft saved!");
         }
         else
         {
-            var result = await ConfigurationService.CreateConfiguration(Configuration);
-            if (result)
-            {
-                if (Configuration.Workstations != null) await SetSavedService.PublishAsync(Configuration.Workstations);
-            }
+            //Create or Update Configuration
+            var resultCreate = await ConfigurationService.CreateConfiguration(Configuration);
+            
+            //Read Configuration and mark saved workstations
+            var resultRead = await ConfigurationDraftService.ReadConfigurationById(Configuration.Id);
+            resultRead?.Workstations.Any(x => x.IsSaved = true);
+            if (resultCreate) if (Configuration.Workstations != null) await SetSavedService.PublishAsync(Configuration.Workstations);
+            
             Configuration.Type = TypeOfConfiguration.Finished;
             await AutoSaveStatus.UpdateStatus(AutoSaveType.Saved, "Configuration saved!");
         }
