@@ -6,6 +6,7 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
     const targetList = document.querySelector(".target-list");
     const draggableLists = document.querySelectorAll(".draggable-list");
     const previewTextarea = document.querySelector(".preview");
+    let activePreviewTextarea = document.getElementById('preview-content-hardware');
 
     if (workstations != null) {
         if (workstations.length > 0) {
@@ -42,7 +43,7 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
     function updatePreview() {
         const itemsInTarget = targetList.querySelectorAll(".item");
         const itemTexts = Array.from(itemsInTarget).map(item => item.textContent.trim());
-        previewTextarea.value = itemTexts.join("\n");
+        activePreviewTextarea.value = itemTexts.join("\n");
         configuration = itemTexts;
         dotNetHelper.invokeMethodAsync('OnUserInteraction');
     }
@@ -115,5 +116,15 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
         });
 
         list.addEventListener("dragenter", (e) => e.preventDefault());
+    });
+
+    document.querySelectorAll('.preview-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.preview-content-tab').forEach(tc => tc.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById('preview-content-' + tab.dataset.tab).classList.add('active');
+            activePreviewTextarea = document.getElementById('preview-content-' + tab.dataset.tab);
+        });
     });
 };

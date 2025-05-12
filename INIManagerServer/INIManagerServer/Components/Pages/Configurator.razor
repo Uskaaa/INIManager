@@ -55,7 +55,18 @@
     </div>
     <div class="preview-container">
         <h3>Live-Preview</h3>
-        <textarea readonly disabled type="text" class="preview-textarea preview"></textarea>
+        <div class="preview-tabs">
+            <button class="preview-tab active" data-tab="hardware">Hardware.ini</button>
+            <button class="preview-tab" data-tab="params">Params.ini</button>
+            <button class="preview-tab" data-tab="defaults">Defaults.ini</button>
+            <button class="preview-tab" data-tab="m2ksys">M2kSys.ini</button>
+        </div>
+        <div class="preview-views">
+            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab active" id="preview-content-hardware"></textarea>
+            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab" id="preview-content-params"></textarea>
+            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab" id="preview-content-defaults"></textarea>
+            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab" id="preview-content-m2ksys"></textarea>
+        </div>
     </div>
     <div class="preview-footer">
         <div class="action-buttons">
