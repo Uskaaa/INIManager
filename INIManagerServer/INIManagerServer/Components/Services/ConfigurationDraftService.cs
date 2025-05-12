@@ -33,10 +33,11 @@ public class ConfigurationDraftService : IConfigurationService
                 foreach (var workstation in configuration.Workstations)
                 {
                     await using var command3 = new MySqlCommand(
-                        "INSERT INTO configws (configurationdraftid, workstationid) VALUES (@configurationdraftid, @workstationid);",
+                        "INSERT INTO configws (configurationdraftid, workstationid, sequence) VALUES (@configurationdraftid, @workstationid, @sequence);",
                         _dbConnector.GetConnection());
                     command3.Parameters.AddWithValue("@configurationdraftid", configuration.Id);
                     command3.Parameters.AddWithValue("@workstationid", workstation.Id);
+                    command3.Parameters.AddWithValue("@sequence", workstation.Sequence);
                     await command3.ExecuteNonQueryAsync();
                 }
 
@@ -82,7 +83,7 @@ public class ConfigurationDraftService : IConfigurationService
 
         var workstations = new List<Workstation>();
         await using (var command2 = new MySqlCommand(
-                         "SELECT workstation.id, workstation.name, workstation.description FROM configws " +
+                         "SELECT workstation.id, workstation.name, workstation.description, workstation.sequence FROM configws " +
                          "INNER JOIN workstation ON workstation.id = configws.workstationid " +
                          "WHERE configws.configurationdraftid = @configId;",
                          _dbConnector.GetConnection()))
@@ -100,6 +101,7 @@ public class ConfigurationDraftService : IConfigurationService
                         Id = reader2.GetInt32("id"),
                         Name = reader2.GetString("name"),
                         Description = reader2.GetString("description"),
+                        Sequence = reader2.GetInt32("sequence")
                     });
                 }
 
@@ -145,7 +147,7 @@ public class ConfigurationDraftService : IConfigurationService
         }
 
         await using (var command2 = new MySqlCommand(
-                         "SELECT workstation.id, workstation.name, workstation.description FROM configws " +
+                         "SELECT workstation.id, workstation.name, workstation.description, workstation.sequence FROM configws " +
                          "INNER JOIN workstation ON workstation.id = configws.workstationid " +
                          "WHERE configws.configurationdraftid = @configId;",
                          _dbConnector.GetConnection()))
@@ -161,6 +163,7 @@ public class ConfigurationDraftService : IConfigurationService
                     Id = reader2.GetInt32("id"),
                     Name = reader2.GetString("name"),
                     Description = reader2.GetString("description"),
+                    Sequence = reader2.GetInt32("sequence")
                 });
             }
 
@@ -170,42 +173,6 @@ public class ConfigurationDraftService : IConfigurationService
         await _dbConnector.CloseConnectionAsync();
 
         return configuration;
-    }
-
-    public async Task<bool> UpdateConfiguration(Configuration configuration)
-    {
-        long id = 0;
-        try
-        {
-            await _dbConnector.OpenConnectionAsync();
-            using var command = new MySqlCommand(
-                "UPDATE configuration_draft SET bezeichnung = @bezeichnung, timestamp = @timestamp WHERE id = @id;",
-                _dbConnector.GetConnection());
-            command.Parameters.AddWithValue("@id", configuration.Id);
-            command.Parameters.AddWithValue("@bezeichnung", configuration.Bezeichnung);
-            command.Parameters.AddWithValue("@timestamp", configuration.Timestamp);
-            await command.ExecuteNonQueryAsync();
-
-            foreach (var workstation in configuration.Workstations)
-            {
-                using var command2 = new MySqlCommand(
-                    "UPDATE configws SET workstationid = @workstationid WHERE configurationdraftid = @configurationdraftid;",
-                    _dbConnector.GetConnection());
-                command2.Parameters.AddWithValue("@configurationdraftid", configuration.Id);
-                command2.Parameters.AddWithValue("@workstationid", workstation.Id);
-                await command2.ExecuteNonQueryAsync();
-            }
-
-            await _dbConnector.CloseConnectionAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-            return false;
-        }
-
-        Console.WriteLine("Updated!");
-        return true;
     }
 
     public async Task<bool> DeleteConfiguration(int id)
