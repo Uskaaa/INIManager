@@ -83,7 +83,7 @@ public class ConfigurationDraftService : IConfigurationService
 
         var workstations = new List<Workstation>();
         await using (var command2 = new MySqlCommand(
-                         "SELECT workstation.id, workstation.name, workstation.description, workstation.sequence FROM configws " +
+                         "SELECT workstation.id, workstation.name, workstation.description, configws.sequence FROM configws " +
                          "INNER JOIN workstation ON workstation.id = configws.workstationid " +
                          "WHERE configws.configurationdraftid = @configId;",
                          _dbConnector.GetConnection()))
@@ -147,7 +147,7 @@ public class ConfigurationDraftService : IConfigurationService
         }
 
         await using (var command2 = new MySqlCommand(
-                         "SELECT workstation.id, workstation.name, workstation.description, workstation.sequence FROM configws " +
+                         "SELECT workstation.id, workstation.name, workstation.description, configws.sequence FROM configws " +
                          "INNER JOIN workstation ON workstation.id = configws.workstationid " +
                          "WHERE configws.configurationdraftid = @configId;",
                          _dbConnector.GetConnection()))

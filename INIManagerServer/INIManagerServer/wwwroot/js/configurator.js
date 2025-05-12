@@ -44,7 +44,10 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
         const itemsInTarget = targetList.querySelectorAll(".item");
         const itemTexts = Array.from(itemsInTarget).map(item => item.textContent.trim());
         activePreviewTextarea.value = itemTexts.join("\n");
-        configuration = itemTexts;
+        configuration = Array.from(itemsInTarget).map((item, index) => ({
+            text: item.textContent.trim(),
+            index: index
+        }));
         dotNetHelper.invokeMethodAsync('OnUserInteraction');
     }
 

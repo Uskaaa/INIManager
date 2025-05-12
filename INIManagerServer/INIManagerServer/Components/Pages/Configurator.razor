@@ -373,7 +373,7 @@
                 savedWorkstations = await SetSavedService.ListenOnceAsync();
             }
 
-            var workstationNames = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
+            var workstationNames = await JsRuntime.InvokeAsync<List<ConfigurationItem>>("saveConfiguration");
             List<Workstation> configurationWorkstations = [];
             List<Workstation> workstationsToDelete = [];
             if (savedWorkstations != null)
@@ -381,9 +381,9 @@
                 for (int i = 0; i < savedWorkstations.Count; i++)
                 {
                     var minimumTrue = 0;
-                    for (int j = 0; j < workstationNames.Length; j++)
+                    for (int j = 0; j < workstationNames.Count; j++)
                     {
-                        if (savedWorkstations[i].Name == workstationNames[j])
+                        if (savedWorkstations[i].Name == workstationNames[j].Text)
                         {
                             workstationNames[j] = null;
                             minimumTrue = 1;
@@ -405,9 +405,14 @@
             {
                 foreach (var workstationName in workstationNames)
                 {
-                    if (workstation.Name == workstationName)
+                    if (workstation.Name == workstationName.Text)
                     {
                         configurationWorkstations.Add(workstation);
+                        if (workstation.Name == workstationName.Text)
+                        {
+                            workstation.Sequence = workstationName.Index;
+                            configurationWorkstations.Add(workstation);
+                        }
                     }
                 }
             }
