@@ -214,7 +214,7 @@ public class ConfigurationDraftService : IConfigurationService
             foreach (var workstationToDelete in workstationsToDelete)
             {
                 using var command = new MySqlCommand(
-                    "DELETE FROM configws WHERE configurationid = @configurationId AND workstationid = @workstationId;",
+                    "DELETE FROM configws WHERE configurationdraftid = @configurationId AND workstationid = @workstationId;",
                     _dbConnector.GetConnection());
                 command.Parameters.AddWithValue("@configurationId", configurationid);
                 command.Parameters.AddWithValue("@workstationId", workstationToDelete.Id);

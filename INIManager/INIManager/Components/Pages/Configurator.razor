@@ -184,53 +184,8 @@
         try
         {
             //Autosave logic
-            List<Workstation>? savedWorkstations = [];
-            if (_configuration.Workstations != null)
-            {
-                savedWorkstations = await SetSavedService.ListenOnceAsync();
-            }
+            await SaveLogic();
 
-            var workstationNames = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
-            List<Workstation> configurationWorkstations = [];
-            List<Workstation> workstationsToDelete = [];
-            if (savedWorkstations != null)
-            {
-                for (int i = 0; i < savedWorkstations.Count; i++)
-                {
-                    var minimumTrue = 0;
-                    for (int j = 0; j < workstationNames.Length; j++)
-                    {
-                        if (savedWorkstations[i].Name == workstationNames[j])
-                        {
-                            workstationNames[j] = null;
-                            minimumTrue = 1;
-                        }
-                    }
-
-                    if (minimumTrue == 0)
-                    {
-                        workstationsToDelete.Add(savedWorkstations[i]);
-                    }
-                }
-            }
-
-            var result = await ConfigurationService.DeleteWorkstationsOfConfiguration(_configuration.Id, workstationsToDelete);
-
-            if (!result) throw new Exception("Failed to delete workstations from configuration.");
-
-            foreach (var workstation in _workstations)
-            {
-                foreach (var workstationName in workstationNames)
-                {
-                    if (workstation.Name == workstationName)
-                    {
-                        configurationWorkstations.Add(workstation);
-                    }
-                }
-            }
-
-            _configuration.Workstations = configurationWorkstations;
-            
             //Autosave status
             var resultAutoSave = false;
 
@@ -239,17 +194,22 @@
 
             if (resultAutoSave)
             {
-                //Read Configuration and mark saved workstations
-                var resultRead = await ConfigurationDraftService.ReadConfigurationById(_configuration.Id);
-                resultRead?.Workstations.Any(x => x.IsSaved = true);
-                if (_configuration.Workstations != null) await SetSavedService.PublishAsync(_configuration.Workstations);
-
                 if (_configuration.Type is TypeOfConfiguration.Draft)
                 {
+                    //Read Configuration and mark saved workstations
+                    var resultRead = await ConfigurationDraftService.ReadConfigurationById(_configuration.Id);
+                    resultRead?.Workstations.Any(x => x.IsSaved = true);
+                    if (resultRead.Workstations != null) await SetSavedService.PublishAsync(resultRead.Workstations);
+
                     _autoSave = "Draft saved!";
                 }
                 else if (_configuration.Type is TypeOfConfiguration.Finished)
                 {
+                    //Read Configuration and mark saved workstations
+                    var resultRead = await ConfigurationService.ReadConfigurationById(_configuration.Id);
+                    resultRead?.Workstations.Any(x => x.IsSaved = true);
+                    if (resultRead.Workstations != null) await SetSavedService.PublishAsync(resultRead.Workstations);
+
                     _autoSave = "Configuration saved!";
                 }
 
@@ -291,52 +251,7 @@
         await _saveLock.WaitAsync();
         try
         {
-            List<Workstation>? savedWorkstations = [];
-            if (_configuration.Workstations != null)
-            {
-                savedWorkstations = await SetSavedService.ListenOnceAsync();
-            }
-
-            var workstationNames = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
-            List<Workstation> configurationWorkstations = [];
-            List<Workstation> workstationsToDelete = [];
-            if (savedWorkstations != null)
-            {
-                for (int i = 0; i < savedWorkstations.Count; i++)
-                {
-                    var minimumTrue = 0;
-                    for (int j = 0; j < workstationNames.Length; j++)
-                    {
-                        if (savedWorkstations[i].Name == workstationNames[j])
-                        {
-                            workstationNames[j] = null;
-                            minimumTrue = 1;
-                        }
-                    }
-
-                    if (minimumTrue == 0)
-                    {
-                        workstationsToDelete.Add(savedWorkstations[i]);
-                    }
-                }
-            }
-
-            var result = await ConfigurationService.DeleteWorkstationsOfConfiguration(_configuration.Id, workstationsToDelete);
-
-            if (!result) throw new Exception("Failed to delete workstations from configuration.");
-
-            foreach (var workstation in _workstations)
-            {
-                foreach (var workstationName in workstationNames)
-                {
-                    if (workstation.Name == workstationName)
-                    {
-                        configurationWorkstations.Add(workstation);
-                    }
-                }
-            }
-
-            _configuration.Workstations = configurationWorkstations;
+            await SaveLogic();
 
             await OpenSave_Dialog_Async(true);
         }
@@ -367,57 +282,7 @@
         await _saveLock.WaitAsync();
         try
         {
-            List<Workstation>? savedWorkstations = [];
-            if (_configuration.Workstations != null)
-            {
-                savedWorkstations = await SetSavedService.ListenOnceAsync();
-            }
-
-            var workstationNames = await JsRuntime.InvokeAsync<List<ConfigurationItem>>("saveConfiguration");
-            List<Workstation> configurationWorkstations = [];
-            List<Workstation> workstationsToDelete = [];
-            if (savedWorkstations != null)
-            {
-                for (int i = 0; i < savedWorkstations.Count; i++)
-                {
-                    var minimumTrue = 0;
-                    for (int j = 0; j < workstationNames.Count; j++)
-                    {
-                        if (savedWorkstations[i].Name == workstationNames[j].Text)
-                        {
-                            workstationNames[j] = null;
-                            minimumTrue = 1;
-                        }
-                    }
-
-                    if (minimumTrue == 0)
-                    {
-                        workstationsToDelete.Add(savedWorkstations[i]);
-                    }
-                }
-            }
-
-            var result = await ConfigurationService.DeleteWorkstationsOfConfiguration(_configuration.Id, workstationsToDelete);
-
-            if (!result) throw new Exception("Failed to delete workstations from configuration.");
-
-            foreach (var workstation in _workstations)
-            {
-                foreach (var workstationName in workstationNames)
-                {
-                    if (workstation.Name == workstationName.Text)
-                    {
-                        configurationWorkstations.Add(workstation);
-                        if (workstation.Name == workstationName.Text)
-                        {
-                            workstation.Sequence = workstationName.Index;
-                            configurationWorkstations.Add(workstation);
-                        }
-                    }
-                }
-            }
-
-            _configuration.Workstations = configurationWorkstations;
+            await SaveLogic();
 
             await OpenSave_Dialog_Async(false);
         }
@@ -448,6 +313,73 @@
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
         return DialogService.ShowAsync
             <Save_Dialog>("Save", parameters, options);
+    }
+
+    async Task SaveLogic()
+    {
+        List<Workstation>? savedWorkstations = [];
+        if (_configuration.Workstations != null)
+        {
+            savedWorkstations = await SetSavedService.ListenOnceAsync();
+        }
+
+        List<ConfigurationItem?> workstationNames = await JsRuntime.InvokeAsync<List<ConfigurationItem?>>("saveConfiguration");
+        List<Workstation> configurationWorkstations = [];
+        List<Workstation> workstationsToDelete = [];
+        if (savedWorkstations != null)
+        {
+            for (int i = 0; i < savedWorkstations.Count; i++)
+            {
+                var minimumTrue = 0;
+                for (int j = 0; j < workstationNames.Count; j++)
+                {
+                    if (workstationNames[j] != null)
+                    {
+                        if (savedWorkstations[i].Name == workstationNames[j].Text && savedWorkstations[i].Sequence == workstationNames[j].Index)
+                        {
+                            workstationNames[j] = null;
+                            minimumTrue = 1;
+                        }
+                    }
+                }
+
+                if (minimumTrue == 0)
+                {
+                    savedWorkstations[i].IsSaved = false;
+                    workstationsToDelete.Add(savedWorkstations[i]);
+                }
+            }
+
+            var result = false;
+            switch (_configuration.Type)
+            {
+                case TypeOfConfiguration.Draft:
+                    result = await ConfigurationDraftService.DeleteWorkstationsOfConfiguration(_configuration.Id, workstationsToDelete);
+                    break;
+                case TypeOfConfiguration.Finished:
+                    result = await ConfigurationService.DeleteWorkstationsOfConfiguration(_configuration.Id, workstationsToDelete);
+                    break;
+            }
+
+            if (!result) throw new Exception("Failed to delete workstations from configuration.");
+        }
+
+        foreach (var workstation in _workstations)
+        {
+            foreach (var workstationName in workstationNames)
+            {
+                if (workstationName != null)
+                {
+                    if (workstation.Name == workstationName.Text)
+                    {
+                        workstation.Sequence = workstationName.Index;
+                        configurationWorkstations.Add(workstation);
+                    }
+                }
+            }
+        }
+
+        _configuration.Workstations = configurationWorkstations;
     }
 
 }

@@ -49,7 +49,7 @@
             //Read Configuration and mark saved workstations
             var resultRead = await ConfigurationDraftService.ReadConfigurationById(Configuration.Id);
             resultRead?.Workstations.Any(x => x.IsSaved = true);
-            if (resultCreate) if (Configuration.Workstations != null) await SetSavedService.PublishAsync(Configuration.Workstations);
+            if (resultCreate) if (resultRead.Workstations != null) await SetSavedService.PublishAsync(resultRead.Workstations);
             
             Configuration.Type = TypeOfConfiguration.Draft;
             await AutoSaveStatus.UpdateStatus(AutoSaveType.Saved, "Draft saved!");
@@ -60,9 +60,9 @@
             var resultCreate = await ConfigurationService.CreateConfiguration(Configuration);
             
             //Read Configuration and mark saved workstations
-            var resultRead = await ConfigurationDraftService.ReadConfigurationById(Configuration.Id);
+            var resultRead = await ConfigurationService.ReadConfigurationById(Configuration.Id);
             resultRead?.Workstations.Any(x => x.IsSaved = true);
-            if (resultCreate) if (Configuration.Workstations != null) await SetSavedService.PublishAsync(Configuration.Workstations);
+            if (resultCreate) if (resultRead.Workstations != null) await SetSavedService.PublishAsync(resultRead.Workstations);
             
             Configuration.Type = TypeOfConfiguration.Finished;
             await AutoSaveStatus.UpdateStatus(AutoSaveType.Saved, "Configuration saved!");
