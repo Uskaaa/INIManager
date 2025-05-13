@@ -1,0 +1,453 @@
+﻿@page "/Configurator"
+@page "/Configurator/{Id}"
+@rendermode InteractiveServer
+@using INIManager.Components.Models
+@using INIManager.Components.Pages.Dialogs
+@using INIManager.Components.Services
+@using INIManager.Components.Services.Interfaces
+@using DialogOptions = MudBlazor.DialogOptions
+@inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
+@inject IConfigurationService ConfigurationService
+@inject ConfigurationDraftService ConfigurationDraftService
+@inject WorkstationService WorkstationService
+@inject IDialogService DialogService
+@inject SetSavedService SetSavedService
+
+<MudPopoverProvider/>
+<MudDialogProvider/>
+<MudDialog/>
+
+<div class="configurator-container">
+    <div class="drag-header">
+        <h3>@_configuration.Bezeichnung</h3>
+    </div>
+    <div class="drag-container">
+        <div class="drag-area">
+            <h3>Workstations</h3>
+            <ul class="source-list draggable-list">
+                @foreach (var workstation in _workstations)
+                {
+                    <li class="item" draggable="true">
+                        <div class="details">
+                            <span>@workstation.Name</span>
+                        </div>
+                        <i class="uil uil-draggabledots"></i>
+                    </li>
+                }
+            </ul>
+        </div>
+        <div class="drag-area">
+            <h3>Configuration</h3>
+            <ul class="target-list draggable-list">
+
+            </ul>
+        </div>
+
+    </div>
+    <div class="drag-footer">
+        <div class="draft">
+            <AutoSaveStatus @ref="_autoSaveStatusComponent" AutoSaveType="_autoSaveType" AutoSaveText="@_autoSave"/>
+        </div>
+    </div>
+    <div class="preview-header">
+        @_currentDateTime
+    </div>
+    <div class="preview-container">
+        <h3>Live-Preview</h3>
+        <div class="preview-tabs">
+            <button class="preview-tab active" data-tab="hardware">Hardware.ini</button>
+            <button class="preview-tab" data-tab="params">Params.ini</button>
+            <button class="preview-tab" data-tab="defaults">Defaults.ini</button>
+            <button class="preview-tab" data-tab="m2ksys">M2kSys.ini</button>
+        </div>
+        <div class="preview-views">
+            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab active"
+                      id="preview-content-hardware"></textarea>
+            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab"
+                      id="preview-content-params"></textarea>
+            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab"
+                      id="preview-content-defaults"></textarea>
+            <textarea readonly disabled type="text" class="preview-textarea preview preview-content-tab"
+                      id="preview-content-m2ksys"></textarea>
+        </div>
+    </div>
+    <div class="preview-footer">
+        <div class="action-buttons">
+            <button @onclick="SaveDraft" id="save-draft">Save Draft</button>
+            <button @onclick="Save" id="save">Save</button>
+            <button id="export">Export</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .my-custom-class {
+        backdrop-filter: blur(10px);
+    }
+</style>
+
+@code {
+    [Parameter] public string Id { get; set; }
+
+    private AutoSaveStatus _autoSaveStatusComponent;
+    private AutoSaveType _autoSaveType = AutoSaveType.Error;
+    private string _autoSave = "Draft not saved!";
+    private Timer? _timer;
+    private readonly SemaphoreSlim _saveLock = new(1, 1);
+    private bool _autoSavePending = false;
+
+    private static readonly DateOnly Time = DateOnly.FromDateTime(DateTime.Now);
+    private readonly string _currentDateTime = $"{Time.DayOfWeek.ToString()}, {Time}";
+
+    private Configuration _configuration = new();
+    private List<Workstation> _workstations = [];
+
+    public override async Task SetParametersAsync(ParameterView parameters)
+    {
+        if (parameters.TryGetValue<string>(nameof(Id), out var value))
+        {
+            if (string.IsNullOrEmpty(value)) NavigationManager.NavigateTo("/Home?noorigin=true");
+        }
+
+        await base.SetParametersAsync(parameters);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManager.LocationChanged += (sender, args) => { JsRuntime.InvokeVoidAsync("handleRouteChange", args.Location); };
+
+        _workstations = await WorkstationService.ReadWorkstation();
+
+        var uri = new Uri(NavigationManager.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        var value = query.GetValueOrDefault("from");
+
+        switch (value)
+        {
+            case "NavMenu":
+                _configuration.Id = Convert.ToInt32(Id);
+                _configuration.Bezeichnung = $"Configuration-Draft-{Id}";
+                _configuration.Timestamp = DateTime.Now.ToString("yyyy-MM-dd");
+                _configuration.Type = TypeOfConfiguration.Draft;
+                break;
+
+            case "Draft":
+                _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
+                _configuration.Type = TypeOfConfiguration.Draft;
+                _configuration.Workstations?.Any(x => x.IsSaved = true);
+                break;
+
+            case "Finished":
+                _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id));
+                _configuration.Type = TypeOfConfiguration.Finished;
+                _configuration.Workstations?.Any(x => x.IsSaved = true);
+                break;
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnUserInteraction()
+    {
+        if (_autoSavePending) return;
+        _timer?.Dispose();
+        if (_configuration.Type == TypeOfConfiguration.Draft) _autoSave = "Saving draft...";
+        else if (_configuration.Type == TypeOfConfiguration.Finished) _autoSave = "Saving configuration...";
+        _autoSaveType = AutoSaveType.Saving;
+        await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
+        _configuration.Timestamp = DateTime.Now.ToString("yyyy-MM-dd");
+        _autoSavePending = true;
+        _timer = new Timer(_ => AutoSave(), null, 5000, Timeout.Infinite);
+    }
+
+    async void AutoSave()
+    {
+        if (!await _saveLock.WaitAsync(1))
+            if (!_autoSavePending)
+            {
+                _autoSave = "Draft not saved!";
+                _autoSaveType = AutoSaveType.Error;
+                await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
+                return;
+            }
+
+        try
+        {
+            //Autosave logic
+            List<Workstation>? savedWorkstations = [];
+            if (_configuration.Workstations != null)
+            {
+                savedWorkstations = await SetSavedService.ListenOnceAsync();
+            }
+
+            var workstationNames = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
+            List<Workstation> configurationWorkstations = [];
+            List<Workstation> workstationsToDelete = [];
+            if (savedWorkstations != null)
+            {
+                for (int i = 0; i < savedWorkstations.Count; i++)
+                {
+                    var minimumTrue = 0;
+                    for (int j = 0; j < workstationNames.Length; j++)
+                    {
+                        if (savedWorkstations[i].Name == workstationNames[j])
+                        {
+                            workstationNames[j] = null;
+                            minimumTrue = 1;
+                        }
+                    }
+
+                    if (minimumTrue == 0)
+                    {
+                        workstationsToDelete.Add(savedWorkstations[i]);
+                    }
+                }
+            }
+
+            var result = await ConfigurationService.DeleteWorkstationsOfConfiguration(_configuration.Id, workstationsToDelete);
+
+            if (!result) throw new Exception("Failed to delete workstations from configuration.");
+
+            foreach (var workstation in _workstations)
+            {
+                foreach (var workstationName in workstationNames)
+                {
+                    if (workstation.Name == workstationName)
+                    {
+                        configurationWorkstations.Add(workstation);
+                    }
+                }
+            }
+
+            _configuration.Workstations = configurationWorkstations;
+            
+            //Autosave status
+            var resultAutoSave = false;
+
+            if (_configuration.Type == TypeOfConfiguration.Draft) resultAutoSave = await ConfigurationDraftService.CreateConfiguration(_configuration);
+            else if (_configuration.Type == TypeOfConfiguration.Finished) resultAutoSave = await ConfigurationService.CreateConfiguration(_configuration);
+
+            if (resultAutoSave)
+            {
+                //Read Configuration and mark saved workstations
+                var resultRead = await ConfigurationDraftService.ReadConfigurationById(_configuration.Id);
+                resultRead?.Workstations.Any(x => x.IsSaved = true);
+                if (_configuration.Workstations != null) await SetSavedService.PublishAsync(_configuration.Workstations);
+
+                if (_configuration.Type is TypeOfConfiguration.Draft)
+                {
+                    _autoSave = "Draft saved!";
+                }
+                else if (_configuration.Type is TypeOfConfiguration.Finished)
+                {
+                    _autoSave = "Configuration saved!";
+                }
+
+                _autoSaveType = AutoSaveType.Saved;
+                await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
+            }
+            else
+            {
+                if (_configuration.Type == TypeOfConfiguration.Draft) _autoSave = "Draft not saved!";
+                if (_configuration.Type == TypeOfConfiguration.Finished) _autoSave = "Configuration not saved!";
+                _autoSaveType = AutoSaveType.Error;
+                await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+        finally
+        {
+            _saveLock.Release();
+            _autoSavePending = false;
+        }
+    }
+
+    async void SaveDraft()
+    {
+        if (_autoSavePending)
+        {
+            _autoSavePending = false;
+            _timer?.Dispose();
+            if (_configuration.Type == TypeOfConfiguration.Draft) _autoSave = "Draft not saved!";
+            if (_configuration.Type == TypeOfConfiguration.Finished) _autoSave = "Configuration not saved!";
+            _autoSaveType = AutoSaveType.Error;
+            await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
+        }
+
+        await _saveLock.WaitAsync();
+        try
+        {
+            List<Workstation>? savedWorkstations = [];
+            if (_configuration.Workstations != null)
+            {
+                savedWorkstations = await SetSavedService.ListenOnceAsync();
+            }
+
+            var workstationNames = await JsRuntime.InvokeAsync<string[]>("saveConfiguration");
+            List<Workstation> configurationWorkstations = [];
+            List<Workstation> workstationsToDelete = [];
+            if (savedWorkstations != null)
+            {
+                for (int i = 0; i < savedWorkstations.Count; i++)
+                {
+                    var minimumTrue = 0;
+                    for (int j = 0; j < workstationNames.Length; j++)
+                    {
+                        if (savedWorkstations[i].Name == workstationNames[j])
+                        {
+                            workstationNames[j] = null;
+                            minimumTrue = 1;
+                        }
+                    }
+
+                    if (minimumTrue == 0)
+                    {
+                        workstationsToDelete.Add(savedWorkstations[i]);
+                    }
+                }
+            }
+
+            var result = await ConfigurationService.DeleteWorkstationsOfConfiguration(_configuration.Id, workstationsToDelete);
+
+            if (!result) throw new Exception("Failed to delete workstations from configuration.");
+
+            foreach (var workstation in _workstations)
+            {
+                foreach (var workstationName in workstationNames)
+                {
+                    if (workstation.Name == workstationName)
+                    {
+                        configurationWorkstations.Add(workstation);
+                    }
+                }
+            }
+
+            _configuration.Workstations = configurationWorkstations;
+
+            await OpenSave_Dialog_Async(true);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+
+        finally
+        {
+            _saveLock.Release();
+        }
+    }
+
+    async void Save()
+    {
+        if (_autoSavePending)
+        {
+            _autoSavePending = false;
+            _timer?.Dispose();
+            if (_configuration.Type == TypeOfConfiguration.Draft) _autoSave = "Draft not saved!";
+            if (_configuration.Type == TypeOfConfiguration.Finished) _autoSave = "Configuration not saved!";
+            _autoSaveType = AutoSaveType.Error;
+            await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
+        }
+
+        await _saveLock.WaitAsync();
+        try
+        {
+            List<Workstation>? savedWorkstations = [];
+            if (_configuration.Workstations != null)
+            {
+                savedWorkstations = await SetSavedService.ListenOnceAsync();
+            }
+
+            var workstationNames = await JsRuntime.InvokeAsync<List<ConfigurationItem>>("saveConfiguration");
+            List<Workstation> configurationWorkstations = [];
+            List<Workstation> workstationsToDelete = [];
+            if (savedWorkstations != null)
+            {
+                for (int i = 0; i < savedWorkstations.Count; i++)
+                {
+                    var minimumTrue = 0;
+                    for (int j = 0; j < workstationNames.Count; j++)
+                    {
+                        if (savedWorkstations[i].Name == workstationNames[j].Text)
+                        {
+                            workstationNames[j] = null;
+                            minimumTrue = 1;
+                        }
+                    }
+
+                    if (minimumTrue == 0)
+                    {
+                        workstationsToDelete.Add(savedWorkstations[i]);
+                    }
+                }
+            }
+
+            var result = await ConfigurationService.DeleteWorkstationsOfConfiguration(_configuration.Id, workstationsToDelete);
+
+            if (!result) throw new Exception("Failed to delete workstations from configuration.");
+
+            foreach (var workstation in _workstations)
+            {
+                foreach (var workstationName in workstationNames)
+                {
+                    if (workstation.Name == workstationName.Text)
+                    {
+                        configurationWorkstations.Add(workstation);
+                        if (workstation.Name == workstationName.Text)
+                        {
+                            workstation.Sequence = workstationName.Index;
+                            configurationWorkstations.Add(workstation);
+                        }
+                    }
+                }
+            }
+
+            _configuration.Workstations = configurationWorkstations;
+
+            await OpenSave_Dialog_Async(false);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+
+        finally
+        {
+            _saveLock.Release();
+        }
+    }
+
+    void Export()
+    {
+    }
+
+    private Task OpenSave_Dialog_Async(bool draft)
+    {
+        var parameters = new DialogParameters
+        {
+            { "Configuration", _configuration },
+            { "Draft", draft },
+            { "AutoSaveStatus", _autoSaveStatusComponent }
+        };
+        var options = new DialogOptions { BackgroundClass = "my-custom-class" };
+        return DialogService.ShowAsync
+            <Save_Dialog>("Save", parameters, options);
+    }
+
+}

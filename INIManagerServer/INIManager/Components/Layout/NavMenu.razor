@@ -1,0 +1,66 @@
+﻿@using INIManager.Components.Models
+@using INIManager.Components.Services
+@inject ConfigurationDraftService ConfigurationDraftService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+
+<button class="hamburger-btn">
+    <i class="fas fa-bars"></i>
+</button>
+<div class="sidebar">
+    <div class="sidebar-header">
+        <i class="fas fa-rocket"></i>
+        <h2>INIManager</h2>
+    </div>
+    <nav class="sidebar-nav">
+        <a @onclick="() => Navigate(1)" id="home" class="nav-item active">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a @onclick="() => Navigate(2)" id="configurator" class="nav-item">
+            <i class="fas fa-cogs"></i>
+            <span>Configurator</span>
+        </a>
+        <a @onclick="() => Navigate(3)" id="settings" class="nav-item">
+            <i class="fas fa-sliders-h"></i>
+            <span>Settings</span>
+        </a>
+    </nav>
+</div>
+
+@code {
+    private int _id;
+    Configuration _configuration = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JsRuntime.InvokeVoidAsync("initNavbar");
+    }
+
+    async Task Navigate(int id)
+    {
+        switch (id)
+        {
+            case 1:
+                NavigationManager.NavigateTo("/Home");
+                break;
+            case 2:
+                do
+                {
+                    _id = Random.Shared.Next(1, 10000000);
+                } while ((await ConfigurationDraftService.ReadConfigurationById(_id)).Id == _id);
+
+                NavigationManager.NavigateTo($"Configurator/{_id}?from=NavMenu");
+                break;
+            case 3:
+                NavigationManager.NavigateTo("/Settings");
+                break;
+        }
+    }
+
+}
