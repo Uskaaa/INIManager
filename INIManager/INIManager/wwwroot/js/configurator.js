@@ -7,12 +7,44 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
     const draggableLists = document.querySelectorAll(".draggable-list");
     const previewTextarea = document.querySelector(".preview");
     let activePreviewTextarea = document.getElementById('preview-content-hardware');
-    
+
     window.saveConfiguration = async function () {
         return configuration;
     };
 
-    function updatePreview() {
+    if (workstations && workstations.length > 0) {
+        console.log('Workstations gefunden:', workstations);
+        const sortedWorkstations = [...workstations].sort((a, b) => a.sequence - b.sequence);
+
+        // Erstelle für jede Workstation ein entsprechendes Element in der Zielliste
+        sortedWorkstations.forEach(workstation => {
+            // Suche nach dem entsprechenden Element in den Quell-Listen
+            const sourceLists = Array.from(draggableLists);
+            const sourceItems = sourceLists.flatMap(list =>
+                Array.from(list.querySelectorAll('.item'))
+            );
+
+            // Finde das Item, dessen Text dem Namen der Workstation entspricht
+            const matchingItem = sourceItems.find(item =>
+                item.textContent.trim() === workstation.name
+            );
+
+            if (matchingItem) {
+                // Clone das Item und füge es zur Zielliste hinzu
+                const clone = matchingItem.cloneNode(true);
+                targetList.appendChild(clone);
+
+                // Entferne das Original-Item aus seiner Quell-Liste
+                matchingItem.remove();
+            }
+        });
+
+        updatePreview(true);
+        
+    }
+
+
+    function updatePreview(fromStart) {
         const itemsInTarget = targetList.querySelectorAll(".item");
         const itemTexts = Array.from(itemsInTarget).map(item => item.textContent.trim());
         activePreviewTextarea.value = itemTexts.join("\n");
@@ -20,7 +52,9 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
             text: item.textContent.trim(),
             index: index
         }));
-        dotNetHelper.invokeMethodAsync('OnUserInteraction');
+        if (!fromStart) {
+            dotNetHelper.invokeMethodAsync('OnUserInteraction');
+        }
     }
 
     function initDraggableItems(list) {
@@ -31,7 +65,7 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
             });
             item.addEventListener("dragend", () => {
                 item.classList.remove("dragging");
-                updatePreview();
+                updatePreview(false);
             });
         });
     }
@@ -76,7 +110,7 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
             initDraggableItems(target);
         }
         // So oder so wird die Vorschau aktualisiert
-        updatePreview();
+        updatePreview(false);
     }
 
     draggableLists.forEach(list => {

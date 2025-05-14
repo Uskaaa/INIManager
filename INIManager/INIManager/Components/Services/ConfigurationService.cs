@@ -184,7 +184,7 @@ public class ConfigurationService : IConfigurationService
             using var command = new MySqlCommand(
                 "DELETE FROM configws WHERE configurationid = @id;",
                 _dbConnector.GetConnection());
-            command.Parameters.AddWithValue("@configurationid", id);
+            command.Parameters.AddWithValue("@id", id);
             await command.ExecuteNonQueryAsync();
 
             await _dbConnector.OpenConnectionAsync();

@@ -96,6 +96,7 @@
     private Timer? _timer;
     private readonly SemaphoreSlim _saveLock = new(1, 1);
     private bool _autoSavePending = false;
+    private bool _alreadySaved = false;
 
     private static readonly DateOnly Time = DateOnly.FromDateTime(DateTime.Now);
     private readonly string _currentDateTime = $"{Time.DayOfWeek.ToString()}, {Time}";
@@ -136,12 +137,18 @@
                 _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
                 _configuration.Type = TypeOfConfiguration.Draft;
                 _configuration.Workstations?.Any(x => x.IsSaved = true);
+                if (_configuration.Workstations != null) await SetSavedService.PublishAsync(_configuration.Workstations);
+                _autoSave = "Draft saved!";
+                _autoSaveType = AutoSaveType.Saved;
                 break;
 
             case "Finished":
                 _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id));
                 _configuration.Type = TypeOfConfiguration.Finished;
                 _configuration.Workstations?.Any(x => x.IsSaved = true);
+                if (_configuration.Workstations != null) await SetSavedService.PublishAsync(_configuration.Workstations);
+                _autoSave = "Configuration saved!";
+                _autoSaveType = AutoSaveType.Saved;
                 break;
         }
 
@@ -184,7 +191,7 @@
         try
         {
             //Autosave logic
-            await SaveLogic();
+            await SaveLogic(_alreadySaved = false);
 
             //Autosave status
             var resultAutoSave = false;
@@ -251,8 +258,18 @@
         await _saveLock.WaitAsync();
         try
         {
-            await SaveLogic();
-
+            _alreadySaved = false;
+            if (_configuration.Type == TypeOfConfiguration.Finished)
+            {
+                await ConfigurationService.DeleteConfiguration(_configuration.Id);
+                _configuration.Workstations?.Any(x => x.IsSaved = false);
+                _alreadySaved = false;
+            }
+            
+            _configuration.Type = TypeOfConfiguration.Draft;
+            
+            await SaveLogic(_alreadySaved);
+            
             await OpenSave_Dialog_Async(true);
         }
         catch (Exception e)
@@ -282,8 +299,18 @@
         await _saveLock.WaitAsync();
         try
         {
-            await SaveLogic();
-
+            _alreadySaved = false;
+            if (_configuration.Type == TypeOfConfiguration.Draft)
+            {
+                await ConfigurationDraftService.DeleteConfiguration(_configuration.Id);
+                _configuration.Workstations?.Any(x => x.IsSaved = false);
+                _alreadySaved = true;
+            }
+            
+            _configuration.Type = TypeOfConfiguration.Finished;
+            
+            await SaveLogic(_alreadySaved);
+            
             await OpenSave_Dialog_Async(false);
         }
         catch (Exception e)
@@ -315,10 +342,10 @@
             <Save_Dialog>("Save", parameters, options);
     }
 
-    async Task SaveLogic()
+    async Task SaveLogic(bool alreadySaved)
     {
         List<Workstation>? savedWorkstations = [];
-        if (_configuration.Workstations != null)
+        if (_configuration.Workstations != null && !alreadySaved)
         {
             savedWorkstations = await SetSavedService.ListenOnceAsync();
         }
