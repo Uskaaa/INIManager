@@ -11,10 +11,12 @@
 @inject IConfigurationService ConfigurationService
 @inject ConfigurationDraftService ConfigurationDraftService
 @inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
 <MudPopoverProvider/>
 <MudDialogProvider/>
 <MudDialog/>
+<MudSnackbarProvider/>
 
 <div class="container">
     <div class="table-container">
@@ -142,32 +144,58 @@
 
     void EditDraft(int id)
     {
-        Console.WriteLine(id);
         Task.Delay(100);
         NavigationManager.NavigateTo($"/Configurator/{id}?from=Draft");
     }
 
-    void ExportDraft(int id)
+    async Task ExportDraft(int id)
     {
     }
 
-    void DeleteDraft(int id)
+    async Task DeleteDraft(int id)
     {
+        var result = await ConfigurationDraftService.DeleteConfiguration(id);
+        if (result)
+        {
+            var itemToRemove = _configurationDrafts.FirstOrDefault(c => c.Id == id);
+            if (itemToRemove is not null)
+                _configurationDrafts.Remove(itemToRemove);
+
+            StateHasChanged();
+            Snackbar.Add("Erfolgreich gelöscht", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add("Erfolgreich gelöscht", Severity.Error);
+        }
     }
     
     void Edit(int id)
     {
-        Console.WriteLine(id);
         Task.Delay(100);
         NavigationManager.NavigateTo($"/Configurator/{id}?from=Finished");
     }
 
-    void Export(int id)
+    async Task Export(int id)
     {
     }
 
-    void Delete(int id)
+    async Task Delete(int id)
     {
+        var result = await ConfigurationService.DeleteConfiguration(id);
+        if (result)
+        {
+            var itemToRemove = _configurations.FirstOrDefault(c => c.Id == id);
+            if (itemToRemove is not null)
+                _configurations.Remove(itemToRemove);
+
+            StateHasChanged();
+            Snackbar.Add("Erfolgreich gelöscht", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add("Erfolgreich gelöscht", Severity.Error);
+        }
     }
 
     private Task OpenError_Dialog_NoOriginFound_Async()
