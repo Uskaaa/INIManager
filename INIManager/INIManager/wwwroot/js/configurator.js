@@ -8,6 +8,21 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
     const previewTextarea = document.querySelector(".preview");
     let activePreviewTextarea = document.getElementById('preview-content-hardware');
 
+    const textareaHardware = document.getElementById('preview-content-hardware');
+    const textareaParams = document.getElementById('preview-content-params');
+    const textareaDefault = document.getElementById('preview-content-defaults');
+    const textareaM2kSys = document.getElementById('preview-content-m2ksys');
+
+    const textHardware = "hardwareini\nharwarefdalsdkf\nlaskdjfldfkj\ndlaksjdfk\n\n";
+    const textParams = "params\nharwarefdalsdkf\nlaskdjfldfkj\ndlaksjdfk\n\n";
+    const textDefault = "defaults\nharwarefdalsdkf\nlaskdjfldfkj\ndlaksjdfk\n\n";
+    const textM2kSys = "m2ksys\nharwarefdalsdkf\nlaskdjfldfkj\ndlaksjdfk\n\n";
+    
+    textareaHardware.value += textHardware;
+    textareaParams.value += textParams;
+    textareaDefault.value += textDefault;
+    textareaM2kSys.value += textM2kSys;
+
     window.saveConfiguration = async function () {
         return configuration;
     };
@@ -40,14 +55,19 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
         });
 
         updatePreview(true);
-        
+
     }
-
-
+    
     function updatePreview(fromStart) {
         const itemsInTarget = targetList.querySelectorAll(".item");
         const itemTexts = Array.from(itemsInTarget).map(item => item.textContent.trim());
-        activePreviewTextarea.value = itemTexts.join("\n");
+        activePreviewTextarea.value = (itemTexts.join("\n"));
+
+        textareaHardware.value = textHardware + (itemTexts.join("\n"));
+        textareaParams.value = textParams + (itemTexts.join("\n"));
+        textareaDefault.value = textDefault + (itemTexts.join("\n"));
+        textareaM2kSys.value = textM2kSys + (itemTexts.join("\n"));
+        
         configuration = Array.from(itemsInTarget).map((item, index) => ({
             text: item.textContent.trim(),
             index: index
@@ -128,12 +148,12 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
     });
 
     document.querySelectorAll('.preview-tab').forEach(tab => {
-        tab.addEventListener('click', function() {
+        tab.addEventListener('click', function () {
             document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.preview-content-tab').forEach(tc => tc.classList.remove('active'));
             tab.classList.add('active');
             document.getElementById('preview-content-' + tab.dataset.tab).classList.add('active');
-            activePreviewTextarea = document.getElementById('preview-content-' + tab.dataset.tab);
+            
         });
     });
 };
