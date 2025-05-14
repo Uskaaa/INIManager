@@ -7,34 +7,6 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
     const draggableLists = document.querySelectorAll(".draggable-list");
     const previewTextarea = document.querySelector(".preview");
     let activePreviewTextarea = document.getElementById('preview-content-hardware');
-
-    if (workstations != null) {
-        if (workstations.length > 0) {
-            console.log('Workstations found in configuration!')
-            var dragoverEvent = new Event('dragover')
-            var dropEvent = new Event('drop');
-            var dragendEvent = new Event('dragend');
-
-            draggableLists.forEach(list => {
-                const items = list.querySelectorAll(".item");
-                items.forEach(item => {
-                    setTimeout(() => item.classList.add("dragging"), 0);
-                });
-
-                items.forEach(item => {
-                    item.dispatchEvent(dragoverEvent);
-                });
-
-                items.forEach(item => {
-                    item.dispatchEvent(dropEvent);
-                });
-
-                items.forEach(item => {
-                    item.dispatchEvent(dragendEvent);
-                });
-            });
-        }    
-    }
     
     window.saveConfiguration = async function () {
         return configuration;
