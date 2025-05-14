@@ -61,7 +61,6 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
     function updatePreview(fromStart) {
         const itemsInTarget = targetList.querySelectorAll(".item");
         const itemTexts = Array.from(itemsInTarget).map(item => item.textContent.trim());
-        activePreviewTextarea.value = (itemTexts.join("\n"));
 
         textareaHardware.value = textHardware + (itemTexts.join("\n"));
         textareaParams.value = textParams + (itemTexts.join("\n"));
