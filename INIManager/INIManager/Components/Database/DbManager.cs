@@ -23,7 +23,6 @@ public class DbManager
             "zone_id VARCHAR(50) NOT NULL);",
             _dbConnector.GetConnection());
         await command.ExecuteNonQueryAsync();
-        await _dbConnector.CloseConnectionAsync();
     }
 
     // Beispiel: Item einfügen oder aktualisieren
@@ -38,6 +37,5 @@ public class DbManager
         command.Parameters.AddWithValue("@name", name);
         command.Parameters.AddWithValue("@zoneId", zoneId);
         await command.ExecuteNonQueryAsync();
-        await _dbConnector.CloseConnectionAsync();
     }
 }

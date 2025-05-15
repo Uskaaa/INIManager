@@ -5,6 +5,7 @@
 @using INIManager.Components.Pages.Dialogs
 @using INIManager.Components.Services
 @using INIManager.Components.Services.Interfaces
+@using Microsoft.AspNetCore.SignalR.Client
 @using DialogOptions = MudBlazor.DialogOptions
 @inject IJSRuntime JsRuntime
 @inject NavigationManager NavigationManager
@@ -119,8 +120,24 @@
     List<Configuration> _configurationDrafts = [];
     List<Configuration> _configurations = [];
 
+    private HubConnection _hubConnection;
+    
     protected override async Task OnInitializedAsync()
     {
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/configurationHub"))
+            .Build();
+        
+        _hubConnection.On("ReloadConfigurations", async () =>
+        {
+            Console.WriteLine("ReloadConfigurations event received");
+            _configurationDrafts = await ConfigurationDraftService.ReadConfiguration();
+            _configurations = await ConfigurationService.ReadConfiguration();
+            await InvokeAsync(StateHasChanged);
+        });
+        
+        await _hubConnection.StartAsync();
+        
         NavigationManager.LocationChanged += (sender, args) => { JsRuntime.InvokeVoidAsync("handleRouteChange", args.Location); };
 
         var uri = new Uri(NavigationManager.Uri);
@@ -131,19 +148,8 @@
         _configurationDrafts = await ConfigurationDraftService.ReadConfiguration();
         _configurations = await ConfigurationService.ReadConfiguration();
 
-        foreach (var configuration in _configurationDrafts)
-        {
-            configuration.Workstations = configuration.Workstations
-                .OrderBy(w => w.Sequence)
-                .ToList();
-        }
-
-        foreach (var configuration in _configurations)
-        {
-            configuration.Workstations = configuration.Workstations
-                .OrderBy(w => w.Sequence)
-                .ToList();
-        }
+        _configurationDrafts.ForEach(x => x.Workstations = x.Workstations.OrderBy(w => w.Sequence).ToList());
+        _configurations.ForEach(x => x.Workstations = x.Workstations.OrderBy(w => w.Sequence).ToList());
 
         await base.OnInitializedAsync();
     }

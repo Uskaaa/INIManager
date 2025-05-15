@@ -1,6 +1,7 @@
 ﻿using INIManager.Components.Database;
 using INIManager.Components.Models;
 using INIManager.Components.Services.Interfaces;
+using Microsoft.AspNetCore.SignalR;
 using MySqlConnector;
 
 namespace INIManager.Components.Services;
@@ -8,20 +9,22 @@ namespace INIManager.Components.Services;
 public class ConfigurationDraftService : IConfigurationService
 {
     private readonly DbConnector _dbConnector;
+    private readonly IServiceProvider _serviceProvider;
 
-    public ConfigurationDraftService(DbConnector dbConnector)
+    public ConfigurationDraftService(DbConnector dbConnector, IServiceProvider serviceProvider)
     {
         _dbConnector = dbConnector;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task<bool> CreateConfiguration(Configuration configuration)
     {
         try
         {
-            await _dbConnector.OpenConnectionAsync();
+            await using var connection = await _dbConnector.OpenConnectionAsync();
             await using var command = new MySqlCommand(
                 "INSERT INTO configuration_draft (id, bezeichnung, timestamp) VALUES (@id, @bezeichnung, @timestamp) ON DUPLICATE KEY UPDATE bezeichnung = @bezeichnung, timestamp = @timestamp;",
-                _dbConnector.GetConnection());
+                connection);
             command.Parameters.AddWithValue("@id", configuration.Id);
             command.Parameters.AddWithValue("@bezeichnung", configuration.Bezeichnung);
             command.Parameters.AddWithValue("@timestamp", configuration.Timestamp);
@@ -34,14 +37,12 @@ public class ConfigurationDraftService : IConfigurationService
                 {
                     await using var command3 = new MySqlCommand(
                         "INSERT INTO configws (configurationdraftid, workstationid, sequence) VALUES (@configurationdraftid, @workstationid, @sequence);",
-                        _dbConnector.GetConnection());
+                        connection);
                     command3.Parameters.AddWithValue("@configurationdraftid", configuration.Id);
                     command3.Parameters.AddWithValue("@workstationid", workstation.Id);
                     command3.Parameters.AddWithValue("@sequence", workstation.Sequence);
                     await command3.ExecuteNonQueryAsync();
                 }
-
-                await _dbConnector.CloseConnectionAsync();
             }
         }
         catch (Exception ex)
@@ -51,19 +52,21 @@ public class ConfigurationDraftService : IConfigurationService
         }
 
         Console.WriteLine("Erstellt!");
+        var hubContext = _serviceProvider.GetRequiredService<IHubContext<ConfigurationHub>>();
+        await hubContext.Clients.All.SendAsync("ReloadConfigurations");
         return true;
     }
 
     public async Task<List<Configuration>> ReadConfiguration()
     {
         var configurations = new List<Configuration>();
-
-        await _dbConnector.OpenConnectionAsync();
+        
+        await using var connection = await _dbConnector.OpenConnectionAsync();
         await using (var command =
                      new MySqlCommand(
                          "SELECT id, bezeichnung, timestamp " +
                          "FROM configuration_draft;",
-                         _dbConnector.GetConnection()))
+                         connection))
         {
             await using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -86,7 +89,7 @@ public class ConfigurationDraftService : IConfigurationService
                          "SELECT workstation.id, workstation.name, workstation.description, configws.sequence FROM configws " +
                          "INNER JOIN workstation ON workstation.id = configws.workstationid " +
                          "WHERE configws.configurationdraftid = @configId;",
-                         _dbConnector.GetConnection()))
+                         connection))
         {
             foreach (var configuration in configurations)
             {
@@ -109,8 +112,6 @@ public class ConfigurationDraftService : IConfigurationService
             }
         }
 
-        await _dbConnector.CloseConnectionAsync();
-
         return configurations;
     }
 
@@ -118,14 +119,14 @@ public class ConfigurationDraftService : IConfigurationService
     {
         var configuration = new Configuration();
 
-        await _dbConnector.OpenConnectionAsync();
+        await using var connection = await _dbConnector.OpenConnectionAsync();
         Console.WriteLine($"Connection State: {_dbConnector.GetConnection().State}");
 
         await using (var command = new MySqlCommand(
                          "SELECT id, bezeichnung, timestamp " +
                          "FROM configuration_draft " +
                          "WHERE id = @configId;",
-                         _dbConnector.GetConnection()))
+                         connection))
         {
             command.Parameters.AddWithValue("@configId", id);
             await using var reader = await command.ExecuteReaderAsync();
@@ -150,7 +151,7 @@ public class ConfigurationDraftService : IConfigurationService
                          "SELECT workstation.id, workstation.name, workstation.description, configws.sequence FROM configws " +
                          "INNER JOIN workstation ON workstation.id = configws.workstationid " +
                          "WHERE configws.configurationdraftid = @configId;",
-                         _dbConnector.GetConnection()))
+                         connection))
         {
             command2.Parameters.AddWithValue("@configId", id);
             await using var reader2 = await command2.ExecuteReaderAsync();
@@ -170,8 +171,6 @@ public class ConfigurationDraftService : IConfigurationService
             configuration.Workstations = workstations;
         }
 
-        await _dbConnector.CloseConnectionAsync();
-
         return configuration;
     }
 
@@ -179,21 +178,18 @@ public class ConfigurationDraftService : IConfigurationService
     {
         try
         {
-            await _dbConnector.OpenConnectionAsync();
+            await using var connection = await _dbConnector.OpenConnectionAsync();
             using var command = new MySqlCommand(
                 "DELETE FROM configws WHERE configurationdraftid = @id;",
-                _dbConnector.GetConnection());
+                connection);
             command.Parameters.AddWithValue("@id", id);
             await command.ExecuteNonQueryAsync();
-
-            await _dbConnector.OpenConnectionAsync();
+            
             using var command2 = new MySqlCommand(
                 "DELETE FROM configuration_draft WHERE id = @id;",
-                _dbConnector.GetConnection());
+                connection);
             command2.Parameters.AddWithValue("@id", id);
             await command2.ExecuteNonQueryAsync();
-
-            await _dbConnector.CloseConnectionAsync();
         }
         catch (Exception ex)
         {
@@ -202,6 +198,8 @@ public class ConfigurationDraftService : IConfigurationService
         }
 
         Console.WriteLine("Deleted!");
+        var hubContext = _serviceProvider.GetRequiredService<IHubContext<ConfigurationHub>>();
+        await hubContext.Clients.All.SendAsync("ReloadConfigurations");
         return true;
     }
 
@@ -210,18 +208,16 @@ public class ConfigurationDraftService : IConfigurationService
     {
         try
         {
-            await _dbConnector.OpenConnectionAsync();
+            await using var connection = await _dbConnector.OpenConnectionAsync();
             foreach (var workstationToDelete in workstationsToDelete)
             {
                 using var command = new MySqlCommand(
                     "DELETE FROM configws WHERE configurationdraftid = @configurationId AND workstationid = @workstationId;",
-                    _dbConnector.GetConnection());
+                    connection);
                 command.Parameters.AddWithValue("@configurationId", configurationid);
                 command.Parameters.AddWithValue("@workstationId", workstationToDelete.Id);
                 await command.ExecuteNonQueryAsync();
             }
-
-            await _dbConnector.CloseConnectionAsync();
         }
         catch (Exception ex)
         {
@@ -230,6 +226,8 @@ public class ConfigurationDraftService : IConfigurationService
         }
 
         Console.WriteLine("Deleted!");
+        var hubContext = _serviceProvider.GetRequiredService<IHubContext<ConfigurationHub>>();
+        await hubContext.Clients.All.SendAsync("ReloadConfigurations");
         return true;
     }
 }

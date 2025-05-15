@@ -17,26 +17,26 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddRazorComponents()
-            .AddInteractiveServerComponents().AddCircuitOptions(options =>
-            {
-                options.DetailedErrors = true;
-            });
-        
+            .AddInteractiveServerComponents().AddCircuitOptions(options => { options.DetailedErrors = true; });
+
         //Add Radzen and MudBlazor Service
         builder.Services.AddRadzenComponents();
         builder.Services.AddMudServices();
 
         string connectionString = "Server=localhost;Port=3306;Database=inimanager_db;Uid=root;Pwd=;";
-        builder.Services.AddSingleton(new DbConnector(connectionString));
-        builder.Services.AddSingleton<DbManager>();
-        
+        builder.Services.AddScoped<DbConnector>(sp =>
+            new DbConnector(connectionString));
+        builder.Services.AddScoped<DbManager>();
+
         builder.Services.AddScoped<ProtectedLocalStorage>();
-        
+        builder.Services.AddSignalR();
+        builder.Services.AddRazorPages();
+
         builder.Services.AddScoped<AdoService>();
         builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
         builder.Services.AddScoped<WorkstationService>();
         builder.Services.AddScoped<ConfigurationDraftService>();
-        builder.Services.AddSingleton<SetSavedService>();
+        builder.Services.AddScoped<SetSavedService>();
 
         var app = builder.Build();
 
@@ -51,11 +51,14 @@ public class Program
         app.UseHttpsRedirection();
 
         app.UseAntiforgery();
-
+        
         app.MapStaticAssets();
         app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode();
 
+        app.MapRazorPages();
+        app.MapHub<ConfigurationHub>("/configurationHub");
+        
         app.Run();
     }
 }

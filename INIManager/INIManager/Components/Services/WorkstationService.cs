@@ -17,11 +17,11 @@ public class WorkstationService
     {
         var workstations = new List<Workstation>();
 
-        await _dbConnector.OpenConnectionAsync();
+        await using var connection = await _dbConnector.OpenConnectionAsync();
         await using (var command = new MySqlCommand(
                          "SELECT id, name, description " +
                          "FROM workstation;",
-                         _dbConnector.GetConnection()))
+                         connection))
         {
             await using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -34,8 +34,6 @@ public class WorkstationService
                 });
             }
         }
-
-        await _dbConnector.CloseConnectionAsync();
         return workstations;
     }
 
@@ -43,13 +41,13 @@ public class WorkstationService
     {
         var workstation = new Workstation();
 
-        await _dbConnector.OpenConnectionAsync();
+        await using var connection = await _dbConnector.OpenConnectionAsync();
         await using (var command =
                      new MySqlCommand(
                          "SELECT id, name, description " +
                          "FROM workstation" +
                          "WHERE id = @configId;",
-                         _dbConnector.GetConnection()))
+                         connection))
         {
             command.Parameters.AddWithValue("@configId", id);
             await using var reader = await command.ExecuteReaderAsync();
@@ -63,7 +61,6 @@ public class WorkstationService
                 };
             }
         }
-        await _dbConnector.CloseConnectionAsync();
 
         return workstation;
     }
