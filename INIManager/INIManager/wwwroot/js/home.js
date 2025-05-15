@@ -11,7 +11,7 @@
             // Add click animation
             e.currentTarget.style.transform = 'translateY(2px)';
             setTimeout(() => {
-                e.currentTarget.style.transform = '';
+                e.currentTarget.style.transform = 'translateY(0px)';
             }, 200);
 
             switch (action) {

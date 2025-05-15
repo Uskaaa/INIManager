@@ -20,7 +20,9 @@
 
 <div class="configurator-container">
     <div class="drag-header">
-        <h3><Headline @ref="_headlineComponent" Title="@_configuration.Bezeichnung"/></h3>
+        <h3>
+            <Headline @ref="_headlineComponent" Title="@_configuration.Bezeichnung"/>
+        </h3>
     </div>
     <div class="drag-container">
         <div class="drag-area">
@@ -117,8 +119,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        NavigationManager.LocationChanged += (sender, args) => { JsRuntime.InvokeVoidAsync("handleRouteChange", args.Location); };
-
         _workstations = await WorkstationService.ReadWorkstation();
 
         var uri = new Uri(NavigationManager.Uri);
@@ -156,10 +156,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
-        }
+        if (firstRender) await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
     }
 
     [JSInvokable]
@@ -198,7 +195,7 @@
             if (_configuration.Type == TypeOfConfiguration.Draft) resultAutoSave = await ConfigurationDraftService.CreateConfiguration(_configuration);
             else if (_configuration.Type == TypeOfConfiguration.Finished) resultAutoSave = await ConfigurationService.CreateConfiguration(_configuration);
             await _headlineComponent.UpdateTitle(_configuration.Bezeichnung);
-            
+
             if (resultAutoSave)
             {
                 if (_configuration.Type is TypeOfConfiguration.Draft)
@@ -263,11 +260,11 @@
                 _configuration.Workstations?.Any(x => x.IsSaved = false);
                 _alreadySaved = false;
             }
-            
+
             _configuration.Type = TypeOfConfiguration.Draft;
-            
+
             await SaveLogic(_alreadySaved);
-            
+
             await OpenSave_Dialog_Async(true);
             await _headlineComponent.UpdateTitle(_configuration.Bezeichnung);
         }
@@ -305,11 +302,11 @@
                 _configuration.Workstations?.Any(x => x.IsSaved = false);
                 _alreadySaved = true;
             }
-            
+
             _configuration.Type = TypeOfConfiguration.Finished;
-            
+
             await SaveLogic(_alreadySaved);
-            
+
             await OpenSave_Dialog_Async(false);
             await _headlineComponent.UpdateTitle(_configuration.Bezeichnung);
         }

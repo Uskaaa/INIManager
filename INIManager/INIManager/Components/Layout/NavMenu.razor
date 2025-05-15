@@ -39,26 +39,31 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await JsRuntime.InvokeVoidAsync("initNavbar");
+        if (firstRender) await JsRuntime.InvokeVoidAsync("initNavbar");
     }
 
     async Task Navigate(int id)
     {
+        var uri = new Uri(NavigationManager.Uri);
+
         switch (id)
         {
             case 1:
-                NavigationManager.NavigateTo("/Home");
+                if (!uri.AbsoluteUri.Contains("Home")) NavigationManager.NavigateTo("/Home");
                 break;
             case 2:
-                do
+                if (!uri.AbsoluteUri.Contains("Configurator"))
                 {
-                    _id = Random.Shared.Next(1, 10000000);
-                } while ((await ConfigurationDraftService.ReadConfigurationById(_id)).Id == _id);
+                    do
+                    {
+                        _id = Random.Shared.Next(1, 10000000);
+                    } while ((await ConfigurationDraftService.ReadConfigurationById(_id)).Id == _id);
 
-                NavigationManager.NavigateTo($"Configurator/{_id}?from=NavMenu");
+                    NavigationManager.NavigateTo($"Configurator/{_id}?from=NavMenu");
+                }
                 break;
             case 3:
-                NavigationManager.NavigateTo("/Settings");
+                if (!uri.AbsoluteUri.Contains("Settings")) NavigationManager.NavigateTo("/Settings");
                 break;
         }
     }
