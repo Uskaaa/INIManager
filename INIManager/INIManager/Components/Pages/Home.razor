@@ -6,6 +6,7 @@
 @using INIManager.Components.Services
 @using INIManager.Components.Services.Interfaces
 @using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.Extensions.Caching.Memory
 @using DialogOptions = MudBlazor.DialogOptions
 @inject IJSRuntime JsRuntime
 @inject NavigationManager NavigationManager
@@ -13,6 +14,7 @@
 @inject ConfigurationDraftService ConfigurationDraftService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject IMemoryCache MemoryCache
 
 <MudPopoverProvider/>
 <MudDialogProvider/>
@@ -121,13 +123,13 @@
     List<Configuration> _configurations = [];
 
     private HubConnection _hubConnection;
-    
+
     protected override async Task OnInitializedAsync()
     {
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/configurationHub"))
             .Build();
-        
+
         _hubConnection.On("ReloadConfigurations", async () =>
         {
             Console.WriteLine("ReloadConfigurations event received");
@@ -135,9 +137,9 @@
             _configurations = await ConfigurationService.ReadConfiguration();
             await InvokeAsync(StateHasChanged);
         });
-        
+
         await _hubConnection.StartAsync();
-        
+
         NavigationManager.LocationChanged += (sender, args) => { JsRuntime.InvokeVoidAsync("handleRouteChange", args.Location); };
 
         var uri = new Uri(NavigationManager.Uri);
@@ -162,7 +164,12 @@
     void EditDraft(int id)
     {
         Task.Delay(100);
-        NavigationManager.NavigateTo($"/Configurator/{id}?from=Draft");
+        var result = false;
+
+        if (!MemoryCache.TryGetValue(id, out result))
+        {
+            NavigationManager.NavigateTo($"/Configurator/{id}?from=Draft");
+        }
     }
 
     async Task ExportDraft(int id)
@@ -178,19 +185,24 @@
             if (itemToRemove is not null)
                 _configurationDrafts.Remove(itemToRemove);
 
+            Snackbar.Add("Erfolgreich gelöscht!", Severity.Success);
             StateHasChanged();
-            Snackbar.Add("Erfolgreich gelöscht", Severity.Success);
         }
         else
         {
-            Snackbar.Add("Erfolgreich gelöscht", Severity.Error);
+            Snackbar.Add("Konnte nicht gelöscht werden!", Severity.Error);
         }
     }
 
     void Edit(int id)
     {
         Task.Delay(100);
-        NavigationManager.NavigateTo($"/Configurator/{id}?from=Finished");
+        var result = false;
+
+        if (!MemoryCache.TryGetValue(id, out result))
+        {
+            NavigationManager.NavigateTo($"/Configurator/{id}?from=Finished");
+        }
     }
 
     async Task Export(int id)
@@ -206,12 +218,12 @@
             if (itemToRemove is not null)
                 _configurations.Remove(itemToRemove);
 
+            Snackbar.Add("Erfolgreich gelöscht!", Severity.Success);
             StateHasChanged();
-            Snackbar.Add("Erfolgreich gelöscht", Severity.Success);
         }
         else
         {
-            Snackbar.Add("Erfolgreich gelöscht", Severity.Error);
+            Snackbar.Add("Konnte nicht gelöscht werden!", Severity.Error);
         }
     }
 
