@@ -36,6 +36,9 @@
     
     [Parameter]
     public AutoSaveStatus AutoSaveStatus { get; set; }
+    
+    [Parameter] 
+    public Headline HeadlineComponent { get; set; }
 
     string Timestamp = DateTime.Now.ToString("yyyy-MM-dd");
 
@@ -65,6 +68,8 @@
             Configuration.Type = TypeOfConfiguration.Finished;
             await AutoSaveStatus.UpdateStatus(AutoSaveType.Saved, "Configuration saved!");
         }
+
+        if (Configuration.Bezeichnung != null) await HeadlineComponent.UpdateTitle(Configuration.Bezeichnung);
         MudDialog.Close(DialogResult.Ok(true));
     }
 

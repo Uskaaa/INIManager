@@ -268,7 +268,6 @@
             await SaveLogic(_alreadySaved);
 
             await OpenSave_Dialog_Async(true);
-            await _headlineComponent.UpdateTitle(_configuration.Bezeichnung);
         }
         catch (Exception e)
         {
@@ -310,7 +309,6 @@
             await SaveLogic(_alreadySaved);
 
             await OpenSave_Dialog_Async(false);
-            await _headlineComponent.UpdateTitle(_configuration.Bezeichnung);
         }
         catch (Exception e)
         {
@@ -334,7 +332,8 @@
         {
             { "Configuration", _configuration },
             { "Draft", draft },
-            { "AutoSaveStatus", _autoSaveStatusComponent }
+            { "AutoSaveStatus", _autoSaveStatusComponent },
+            { "HeadlineComponent", _headlineComponent }
         };
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
         return DialogService.ShowAsync
