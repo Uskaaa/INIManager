@@ -119,6 +119,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        NavigationManager.LocationChanged += (sender, args) => { JsRuntime.InvokeVoidAsync("handleRouteChange", args.Location); };
+        
         _workstations = await WorkstationService.ReadWorkstation();
 
         var uri = new Uri(NavigationManager.Uri);
@@ -156,7 +158,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender) await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
+        await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
     }
 
     [JSInvokable]

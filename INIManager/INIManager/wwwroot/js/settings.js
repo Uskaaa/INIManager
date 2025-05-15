@@ -1,4 +1,5 @@
 ﻿window.initSettings = () => {
+    console.log('Settings page initialized');
     // Tab switching functionality
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabPanes = document.querySelectorAll('.tab-pane');

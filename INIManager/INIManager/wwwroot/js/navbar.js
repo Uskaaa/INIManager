@@ -23,10 +23,7 @@
     
     navItems.forEach(item => {
         const currentUrl = window.location.href;
-        console.log(currentUrl)
-        console.log(item.id)
-        // Remove active class from all items
-
+        
         if (currentUrl.toLowerCase().includes(item.id)) {
             navItems.forEach(navItem => navItem.classList.remove('active'));
             item.classList.add('active');
@@ -59,6 +56,17 @@
         if (window.innerWidth > 768) {
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
+        }
+    });
+};
+
+window.handleRouteChange = function (newUrl) {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(navItem => navItem.classList.remove('active'));
+    navItems.forEach(item => {
+
+        if (newUrl.toLowerCase().includes(item.id)) {
+            item.classList.add('active');
         }
     });
 };

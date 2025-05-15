@@ -26,7 +26,6 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
     };
 
     if (workstations && workstations.length > 0) {
-        console.log('Workstations gefunden:', workstations);
         const sortedWorkstations = [...workstations].sort((a, b) => a.sequence - b.sequence);
 
         // Erstelle für jede Workstation ein entsprechendes Element in der Zielliste
