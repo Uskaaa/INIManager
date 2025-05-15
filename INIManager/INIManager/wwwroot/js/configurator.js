@@ -5,8 +5,6 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
 
     const targetList = document.querySelector(".target-list");
     const draggableLists = document.querySelectorAll(".draggable-list");
-    const previewTextarea = document.querySelector(".preview");
-    let activePreviewTextarea = document.getElementById('preview-content-hardware');
 
     const textareaHardware = document.getElementById('preview-content-hardware');
     const textareaParams = document.getElementById('preview-content-params');

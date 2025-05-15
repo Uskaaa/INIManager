@@ -1,0 +1,12 @@
+﻿@Title
+
+@code {
+    [Parameter]
+    public string Title { get; set; }
+    
+    public async Task UpdateTitle(string newTitle)
+    {
+        Title = newTitle;
+        await InvokeAsync(StateHasChanged);
+    }
+}

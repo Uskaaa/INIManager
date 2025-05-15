@@ -20,7 +20,7 @@
 
 <div class="configurator-container">
     <div class="drag-header">
-        <h3>@_configuration.Bezeichnung</h3>
+        <h3><Headline @ref="_headlineComponent" Title="@_configuration.Bezeichnung"/></h3>
     </div>
     <div class="drag-container">
         <div class="drag-area">
@@ -90,6 +90,7 @@
 @code {
     [Parameter] public string Id { get; set; }
 
+    private Headline _headlineComponent;
     private AutoSaveStatus _autoSaveStatusComponent;
     private AutoSaveType _autoSaveType = AutoSaveType.Error;
     private string _autoSave = "Draft not saved!";
@@ -136,7 +137,6 @@
             case "Draft":
                 _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
                 _configuration.Type = TypeOfConfiguration.Draft;
-                _configuration.Workstations?.Any(x => x.IsSaved = true);
                 if (_configuration.Workstations != null) await SetSavedService.PublishAsync(_configuration.Workstations);
                 _autoSave = "Draft saved!";
                 _autoSaveType = AutoSaveType.Saved;
@@ -145,7 +145,6 @@
             case "Finished":
                 _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id));
                 _configuration.Type = TypeOfConfiguration.Finished;
-                _configuration.Workstations?.Any(x => x.IsSaved = true);
                 if (_configuration.Workstations != null) await SetSavedService.PublishAsync(_configuration.Workstations);
                 _autoSave = "Configuration saved!";
                 _autoSaveType = AutoSaveType.Saved;
@@ -198,14 +197,14 @@
 
             if (_configuration.Type == TypeOfConfiguration.Draft) resultAutoSave = await ConfigurationDraftService.CreateConfiguration(_configuration);
             else if (_configuration.Type == TypeOfConfiguration.Finished) resultAutoSave = await ConfigurationService.CreateConfiguration(_configuration);
-
+            await _headlineComponent.UpdateTitle(_configuration.Bezeichnung);
+            
             if (resultAutoSave)
             {
                 if (_configuration.Type is TypeOfConfiguration.Draft)
                 {
                     //Read Configuration and mark saved workstations
                     var resultRead = await ConfigurationDraftService.ReadConfigurationById(_configuration.Id);
-                    resultRead?.Workstations.Any(x => x.IsSaved = true);
                     if (resultRead.Workstations != null) await SetSavedService.PublishAsync(resultRead.Workstations);
 
                     _autoSave = "Draft saved!";
@@ -214,7 +213,6 @@
                 {
                     //Read Configuration and mark saved workstations
                     var resultRead = await ConfigurationService.ReadConfigurationById(_configuration.Id);
-                    resultRead?.Workstations.Any(x => x.IsSaved = true);
                     if (resultRead.Workstations != null) await SetSavedService.PublishAsync(resultRead.Workstations);
 
                     _autoSave = "Configuration saved!";
@@ -271,6 +269,7 @@
             await SaveLogic(_alreadySaved);
             
             await OpenSave_Dialog_Async(true);
+            await _headlineComponent.UpdateTitle(_configuration.Bezeichnung);
         }
         catch (Exception e)
         {
@@ -312,6 +311,7 @@
             await SaveLogic(_alreadySaved);
             
             await OpenSave_Dialog_Async(false);
+            await _headlineComponent.UpdateTitle(_configuration.Bezeichnung);
         }
         catch (Exception e)
         {
