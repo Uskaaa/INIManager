@@ -49,20 +49,23 @@
 INIManager/
 │
 ├── Components/
-│   ├── Layout/         # MainLayout, NavMenu, CSS
-│   ├── Pages/          # Home, Configurator, Settings, Dialogs
-│   ├── Models/         # Datenmodelle (Configuration, Workstation, etc.)
-│   ├── Services/       # Backend-Services (Konfiguration, Export, Locking, etc.)
-│   └── Database/       # Datenbankzugriff
+│   ├── Layout/           # MainLayout, NavMenu, CSS
+│   ├── Pages/            # Home, Configurator, Settings, Dialogs
+│   │   ├── Components/   # Blazor Komponenten
+│   │   └── Dialogs/
+│   ├── Models/           # Datenmodelle (Configuration, Workstation, etc.)
+│   ├── Services/         # Backend-Services (Konfiguration, Export, Locking, etc.)
+│   │   └── Interfaces/   # Interfaces für Klassenimplementierungen
+│   └── Database/
 │
 ├── wwwroot/
-│   ├── js/             # JavaScript für Interaktivität (Drag & Drop, Navbar, etc.)
-│   ├── css/            # Statische CSS-Dateien
-│   └── lib/            # Drittanbieter-Bibliotheken
+│   ├── js/               # JavaScript für Interaktivität (Drag & Drop, Navbar, etc.)
+│   ├── css/              # Statische CSS-Dateien
+│   └── lib/              # Drittanbieter-Bibliotheken
 │
-├── Program.cs          # Einstiegspunkt, Service-Konfiguration
-├── INIManager.csproj   # Projektdatei, NuGet-Abhängigkeiten
-└── appsettings.json    # Konfiguration (z.B. DB-Connection)
+├── Program.cs            # Einstiegspunkt, Service-Konfiguration
+├── INIManager.csproj     # Projektdatei, NuGet-Abhängigkeiten
+└── appsettings.json      # Konfiguration (z.B. DB-Connection)
 ```
 
 ---
