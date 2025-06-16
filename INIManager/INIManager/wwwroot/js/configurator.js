@@ -1,4 +1,4 @@
-window.initConfigurator = (workstationsJson, dotNetHelper, config) => {
+window.initConfigurator = (workstationsJson, config, dotNetHelper) => {
     console.log('Configurator started!');
     const workstations = workstationsJson;
     let configuration = [];
@@ -15,7 +15,7 @@ window.initConfigurator = (workstationsJson, dotNetHelper, config) => {
     const textParams = config.textParams;
     const textDefault = config.textDefault;
     const textM2kSys = config.textM2kSys;
-    
+
     textareaHardware.value += textHardware;
     textareaParams.value += textParams;
     textareaDefault.value += textDefault;
@@ -25,6 +25,11 @@ window.initConfigurator = (workstationsJson, dotNetHelper, config) => {
         return configuration;
     };
 
+    window.addEventListener("hashchange", function (event) {
+        
+        dotNetHelper.invokeMethodAsync('Unlock');
+    });
+    
     if (workstations && workstations.length > 0) {
         const sortedWorkstations = [...workstations].sort((a, b) => a.sequence - b.sequence);
 
@@ -52,9 +57,8 @@ window.initConfigurator = (workstationsJson, dotNetHelper, config) => {
         });
 
         updatePreview(true);
-
     }
-    
+
     function updatePreview(fromStart) {
         const itemsInTarget = targetList.querySelectorAll(".item");
         const itemTexts = Array.from(itemsInTarget).map(item => item.textContent.trim());
@@ -63,7 +67,7 @@ window.initConfigurator = (workstationsJson, dotNetHelper, config) => {
         textareaParams.value = textParams + (itemTexts.join("\n"));
         textareaDefault.value = textDefault + (itemTexts.join("\n"));
         textareaM2kSys.value = textM2kSys + (itemTexts.join("\n"));
-        
+
         configuration = Array.from(itemsInTarget).map((item, index) => ({
             text: item.textContent.trim(),
             index: index
@@ -149,7 +153,7 @@ window.initConfigurator = (workstationsJson, dotNetHelper, config) => {
             document.querySelectorAll('.preview-content-tab').forEach(tc => tc.classList.remove('active'));
             tab.classList.add('active');
             document.getElementById('preview-content-' + tab.dataset.tab).classList.add('active');
-            
+            console.log(textHardware, textParams, textDefault, textM2kSys);
         });
     });
 };

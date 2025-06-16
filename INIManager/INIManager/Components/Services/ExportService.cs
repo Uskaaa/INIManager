@@ -7,20 +7,21 @@ namespace INIManager.Components.Services;
 
 public class ExportService : IExportService
 {
-    private readonly IConfigurationService _configurationService;
+    private readonly ConfigurationService _configurationService;
+    private readonly ConfigurationDraftService _configurationDraftService;
     private readonly IConfiguration _configuration;
 
-    public ExportService(IConfigurationService configurationService, IConfiguration configuration)
+    public ExportService(ConfigurationService configurationService, ConfigurationDraftService configurationDraftService, IConfiguration configuration)
     {
         _configurationService = configurationService;
+        _configurationDraftService = configurationDraftService;
         _configuration = configuration;
     }
 
-    public async Task<byte[]> ExportConfigurationAsync(int configurationId)
+    public async Task<byte[]> ExportConfigurationAsync(Configuration config)
     {
-        var config = await _configurationService.ReadConfigurationById(configurationId);
         if (config == null || string.IsNullOrWhiteSpace(config.Bezeichnung))
-            throw new InvalidOperationException("Konfiguration ungültig.");
+            throw new Exception("Konfiguration ungültig.");
 
         var sortedWorkstations = config.Workstations?
             .OrderBy(w => w.Sequence)
@@ -46,7 +47,7 @@ public class ExportService : IExportService
             {
                 var ws = sortedWorkstations[i];
                 sb.AppendLine();
-                sb.AppendLine($"[Workstation {i + 1}]");
+                sb.AppendLine($"[Workstation {ws.Sequence}]");
                 sb.AppendLine($"   Type = {ws.WorkstationType?.Bezeichnung}");
                 sb.AppendLine($"   MinGuiSampleTimeInMs = {ws.MinGuiSampleTimeInMs}");
                 sb.AppendLine($"   HighActive = {ws.HighActive}");

@@ -10,11 +10,10 @@
 @using DialogOptions = MudBlazor.DialogOptions
 @inject IJSRuntime JsRuntime
 @inject NavigationManager NavigationManager
-@inject IConfigurationService ConfigurationService
+@inject ConfigurationService ConfigurationService
 @inject ConfigurationDraftService ConfigurationDraftService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@inject IMemoryCache MemoryCache
 @inject IAdoService AdoService
 @inject ILockService LockService
 @inject IExportService ExportService
@@ -55,15 +54,15 @@
                         <td>@configuration.Timestamp</td>
                         <td>
                             <div class="action-buttons">
-                                <button class="btn btn-edit" title="Edit" @onclick="() => Edit(configuration.Id, true)">
+                                <button class="btn btn-edit" title="Edit" @onclick="() => Edit(configuration.Id)">
                                     <i
                                         class="fas fa-edit"></i></button>
                                 <button class="btn btn-export" title="Export"
-                                        @onclick="() => Export(configuration.Id, true)">
+                                        @onclick="() => Export(configuration)">
                                     <i class="fas fa-file-export"></i>
                                 </button>
                                 <button class="btn btn-delete" title="Delete"
-                                        @onclick="() => Delete(configuration.Id, true)">
+                                        @onclick="() => Delete(configuration.Id)">
                                     <i class="fas fa-trash"></i></button>
                             </div>
                         </td>
@@ -104,12 +103,15 @@
                         <td>@configuration.Timestamp</td>
                         <td>
                             <div class="action-buttons">
-                                <button class="btn btn-edit" title="Edit" @onclick="() => Edit(configuration.Id, false)"><i
+                                <button class="btn btn-edit" title="Edit"
+                                        @onclick="() => Edit(configuration.Id)"><i
                                         class="fas fa-edit"></i></button>
-                                <button class="btn btn-export" title="Export" @onclick="() => Export(configuration.Id, false)">
+                                <button class="btn btn-export" title="Export"
+                                        @onclick="() => Export(configuration)">
                                     <i class="fas fa-file-export"></i>
                                 </button>
-                                <button class="btn btn-delete" title="Delete" @onclick="() => Delete(configuration.Id, false)">
+                                <button class="btn btn-delete" title="Delete"
+                                        @onclick="() => Delete(configuration.Id)">
                                     <i class="fas fa-trash"></i></button>
                             </div>
                         </td>
@@ -129,13 +131,13 @@
     private string textParams;
     private string textDefault;
     private string textM2kSys;
-    
+
     private HubConnection _hubConnection;
 
     protected override async Task OnInitializedAsync()
     {
         await AdoService.LoadWorkstationsFromAzureDevOps();
-        
+
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/configurationHub"))
             .Build();
@@ -149,7 +151,7 @@
         });
 
         await _hubConnection.StartAsync();
-        
+
         NavigationManager.LocationChanged += (sender, args) => { JsRuntime.InvokeVoidAsync("handleRouteChange", args.Location); };
 
         var uri = new Uri(NavigationManager.Uri);
@@ -171,27 +173,35 @@
         if (firstRender) await JsRuntime.InvokeVoidAsync("initHome");
     }
 
-    void Edit(int id, bool isDraft)
+    async Task Edit(int id)
     {
         if (!LockService.IsLocked(id))
         {
             NavigationManager.NavigateTo($"/Configurator/{id}?from=Finished");
         }
+        else
+        {
+            await OpenLocked_Dialog();
+        }
     }
 
-    async Task Export(int id, bool isDraft)
+    async Task Export(Configuration configuration)
     {
-        if (!LockService.IsLocked(id))
+        if (!LockService.IsLocked(configuration.Id))
         {
-            var zipBytes = await ExportService.ExportConfigurationAsync(id);
-            var fileName = $"Configuration-{id}.zip";
+            var zipBytes = await ExportService.ExportConfigurationAsync(configuration);
+            var fileName = $"Configuration-{configuration.Id}.zip";
 
             using var streamRef = new DotNetStreamReference(new MemoryStream(zipBytes));
             await JsRuntime.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
         }
+        else
+        {
+            await OpenLocked_Dialog();
+        }
     }
 
-    async Task Delete(int id, bool isDraft)
+    async Task Delete(int id)
     {
         if (!LockService.IsLocked(id))
         {
@@ -210,6 +220,10 @@
                 Snackbar.Add("Konnte nicht gelöscht werden!", Severity.Error);
             }
         }
+        else
+        {
+            await OpenLocked_Dialog();
+        }
     }
 
     private Task OpenError_Dialog_NoOriginFound_Async()
@@ -217,4 +231,11 @@
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
         return DialogService.ShowAsync<Error_Dialog_NoOriginFound>("No origin was found", options);
     }
+    
+    private Task OpenLocked_Dialog()
+    {
+        var options = new DialogOptions { BackgroundClass = "my-custom-class" };
+        return DialogService.ShowAsync<Locked_Dialog>("Blockiert", options);
+    }
+
 }

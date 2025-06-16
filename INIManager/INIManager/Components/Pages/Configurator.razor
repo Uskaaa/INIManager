@@ -2,13 +2,14 @@
 @page "/Configurator/{Id}"
 @rendermode InteractiveServer
 @using INIManager.Components.Models
+@using INIManager.Components.Pages.Components
 @using INIManager.Components.Pages.Dialogs
 @using INIManager.Components.Services
 @using INIManager.Components.Services.Interfaces
 @using DialogOptions = MudBlazor.DialogOptions
 @inject IJSRuntime JsRuntime
 @inject NavigationManager NavigationManager
-@inject IConfigurationService ConfigurationService
+@inject ConfigurationService ConfigurationService
 @inject ConfigurationDraftService ConfigurationDraftService
 @inject IWorkstationService WorkstationService
 @inject IDialogService DialogService
@@ -145,6 +146,7 @@
                 break;
 
             case "Draft":
+                LockService.SetLock(Convert.ToInt32(Id));
                 _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
                 _configuration.Type = TypeOfConfiguration.Draft;
                 if (_configuration.Workstations != null) await SetSavedService.PublishAsync(_configuration.Workstations);
@@ -172,7 +174,7 @@
         textDefault = Configuration["PreviewTexts:Default"];
         textM2kSys = Configuration["PreviewTexts:M2kSys"];
         
-        await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction), new {textHardware, textParams, textDefault, textM2kSys});
+        await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, new {textHardware, textParams, textDefault, textM2kSys}, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
     }
 
     [JSInvokable]
@@ -338,7 +340,8 @@
 
     async void Export()
     {
-        var zipBytes = await ExportService.ExportConfigurationAsync(_configuration.Id);
+        var zipBytes = await ExportService.ExportConfigurationAsync(_configuration);
+
         var fileName = $"Configuration-{_configuration.Id}.zip";
 
         using var streamRef = new DotNetStreamReference(new MemoryStream(zipBytes));
@@ -424,6 +427,13 @@
         }
 
         _configuration.Workstations = configurationWorkstations;
+    }
+
+    [JSInvokable]
+    public async Task Unlock()
+    {
+        LockService.RemoveLock(_configuration.Id);
+        Console.WriteLine("Lock removed!");
     }
 
 }

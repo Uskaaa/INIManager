@@ -26,25 +26,26 @@ public class Program
         builder.Services.AddScoped<DbConnector>(sp =>
             new DbConnector(connectionString));
         builder.Services.AddScoped<DbManager>();
-
         builder.Services.AddScoped<ProtectedLocalStorage>();
-        builder.Services.AddSignalR();
-        builder.Services.AddRazorPages();
 
-        builder.Services.AddScoped<IAdoService>(provider =>
-        {
-            var repoUrl = "https://dev.azure.com/yourorg/yourproject/_git/yourrepo";
-            var pat = builder.Configuration["AzureDevOps:PersonalAccessToken"]!;
-            var workstationService = provider.GetRequiredService<IWorkstationService>();
-            return new AdoService(repoUrl, pat, workstationService);
-        });
-        builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
+        // builder.Services.AddScoped<IAdoService>(provider =>
+        // {
+        //     var repoUrl = "https://dev.azure.com/yourorg/yourproject/_git/yourrepo";
+        //     var pat = builder.Configuration["AzureDevOps:PersonalAccessToken"]!;
+        //     var workstationService = provider.GetRequiredService<IWorkstationService>();
+        //     return new AdoService(repoUrl, pat, workstationService);
+        // });
+        
+        builder.Services.AddScoped<IAdoService, AdoService>();
+        builder.Services.AddScoped<ConfigurationService>();
         builder.Services.AddScoped<IWorkstationService, WorkstationService>();
         builder.Services.AddScoped<IExportService, ExportService>();
         builder.Services.AddScoped<ConfigurationDraftService>();
-        builder.Services.AddMemoryCache();
-        builder.Services.AddSingleton<ILockService, LockService>();
         builder.Services.AddScoped<SetSavedService>();
+        builder.Services.AddSingleton<ILockService, LockService>();
+        builder.Services.AddMemoryCache();
+        builder.Services.AddSignalR();
+        builder.Services.AddRazorPages();
 
         var app = builder.Build();
 

@@ -1,6 +1,8 @@
-﻿namespace INIManager.Components.Services.Interfaces;
+﻿using INIManager.Components.Models;
+
+namespace INIManager.Components.Services.Interfaces;
 
 public interface IExportService
 {
-    Task<byte[]> ExportConfigurationAsync(int configurationId);
+    Task<byte[]> ExportConfigurationAsync(Configuration config);
 }

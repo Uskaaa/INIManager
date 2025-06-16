@@ -1,5 +1,24 @@
-﻿<h3>Locked_Dialog</h3>
+﻿@rendermode InteractiveServer
+
+<MudDialog>
+    <DialogContent>
+        <h3>Konfiguration wird verwendet!</h3>
+        <br>
+        Diese Konfiguration wird derzeit von einem anderen Prozess bearbeitet und ist vorübergehend gesperrt.
+        <br>
+        Bitte warte bis der laufende Vorgang abgeschlossen ist, bevor du versuchst, diese Konfiguration zu bearbeiten, zu löschen oder zu exportieren.
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Default" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
-    
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    private void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
 }
