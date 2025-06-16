@@ -4,13 +4,41 @@ using MySqlConnector;
 
 namespace INIManager.Components.Services;
 
-public class WorkstationService
+public class WorkstationService : IWorkstationService
 {
     private readonly DbConnector _dbConnector;
 
     public WorkstationService(DbConnector dbConnector)
     {
         _dbConnector = dbConnector;
+    }
+
+    public async Task<bool> CreateWorkstation(Workstation workstation)
+    {
+        try
+        {
+            await using var connection = await _dbConnector.OpenConnectionAsync();
+            
+            await using var command = new MySqlCommand(
+                "INSERT INTO workstation (id, bezeichnung, typeid, minguisampletimeinms, highactive, tcadsdiaddress, tcadsdiadsport) VALUES (@id, @bezeichnung, @typeid, @minguisampletimeinms, @highactive, @tcadsdiaddress, @tcadsdiadsport) " +
+                "ON DUPLICATE KEY UPDATE bezeichnung = @bezeichnung, typeid = @typeid, minguisampletimeinms = @minguisampletimeinms, highactive = @highactive, tcadsdiaddress = @tcadsdiaddress, tcadsdiadsport = @tcadsdiadsport;",
+                connection);
+            command.Parameters.AddWithValue("@id", workstation.Id);
+            command.Parameters.AddWithValue("@bezeichnung", workstation.Bezeichnung);
+            command.Parameters.AddWithValue("@typeid", workstation.WorkstationType.TypeId);
+            command.Parameters.AddWithValue("@minguisampletimeinms", workstation.MinGuiSampleTimeInMs);
+            command.Parameters.AddWithValue("@highactive", workstation.HighActive);
+            command.Parameters.AddWithValue("@tcadsdiaddress", workstation.TcAdsDiAddress);
+            command.Parameters.AddWithValue("@tcadsdiadsport", workstation.TcAdsDiAdsPort);
+            await command.ExecuteNonQueryAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return false;
+        }
+
+        return true;
     }
 
     public async Task<List<Workstation>> ReadWorkstation()
@@ -29,49 +57,12 @@ public class WorkstationService
                 workstations.Add(new Workstation
                 {
                     Id = reader.GetInt32("id"),
-                    Name = reader.GetString("name"),
+                    Bezeichnung = reader.GetString("name"),
                     Description = reader.GetString("description"),
                 });
             }
         }
+
         return workstations;
-    }
-
-    public async Task<Workstation> ReadWorkstationById(int id)
-    {
-        var workstation = new Workstation();
-
-        await using var connection = await _dbConnector.OpenConnectionAsync();
-        await using (var command =
-                     new MySqlCommand(
-                         "SELECT id, name, description " +
-                         "FROM workstation" +
-                         "WHERE id = @configId;",
-                         connection))
-        {
-            command.Parameters.AddWithValue("@configId", id);
-            await using var reader = await command.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                workstation = new Workstation
-                {
-                    Id = reader.GetInt32("id"),
-                    Name = reader.GetString("name"),
-                    Description = reader.GetString("description")
-                };
-            }
-        }
-
-        return workstation;
-    }
-
-    public async Task<bool> UpdateWorkstation(Workstation workstation)
-    {
-        return true;
-    }
-
-    public async Task<bool> DeleteWorkstation(int id)
-    {
-        return true;
     }
 }

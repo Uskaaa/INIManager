@@ -15,6 +15,9 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject IMemoryCache MemoryCache
+@inject IAdoService AdoService
+@inject ILockService LockService
+@inject IExportService ExportService
 
 <MudPopoverProvider/>
 <MudDialogProvider/>
@@ -45,22 +48,22 @@
                             <select>
                                 @foreach (var workstation in configuration.Workstations)
                                 {
-                                    <option value="@workstation.Name">@workstation.Name</option>
+                                    <option value="@workstation.Bezeichnung">@workstation.Bezeichnung</option>
                                 }
                             </select>
                         </td>
                         <td>@configuration.Timestamp</td>
                         <td>
                             <div class="action-buttons">
-                                <button class="btn btn-edit" title="Edit" @onclick="() => EditDraft(configuration.Id)">
+                                <button class="btn btn-edit" title="Edit" @onclick="() => Edit(configuration.Id, true)">
                                     <i
                                         class="fas fa-edit"></i></button>
                                 <button class="btn btn-export" title="Export"
-                                        @onclick="() => ExportDraft(configuration.Id)">
+                                        @onclick="() => Export(configuration.Id, true)">
                                     <i class="fas fa-file-export"></i>
                                 </button>
                                 <button class="btn btn-delete" title="Delete"
-                                        @onclick="() => DeleteDraft(configuration.Id)">
+                                        @onclick="() => Delete(configuration.Id, true)">
                                     <i class="fas fa-trash"></i></button>
                             </div>
                         </td>
@@ -94,19 +97,19 @@
                             <select>
                                 @foreach (var workstation in configuration.Workstations)
                                 {
-                                    <option value="@workstation.Name">@workstation.Name</option>
+                                    <option value="@workstation.Bezeichnung">@workstation.Bezeichnung</option>
                                 }
                             </select>
                         </td>
                         <td>@configuration.Timestamp</td>
                         <td>
                             <div class="action-buttons">
-                                <button class="btn btn-edit" title="Edit" @onclick="() => Edit(configuration.Id)"><i
+                                <button class="btn btn-edit" title="Edit" @onclick="() => Edit(configuration.Id, false)"><i
                                         class="fas fa-edit"></i></button>
-                                <button class="btn btn-export" title="Export" @onclick="() => Export(configuration.Id)">
+                                <button class="btn btn-export" title="Export" @onclick="() => Export(configuration.Id, false)">
                                     <i class="fas fa-file-export"></i>
                                 </button>
-                                <button class="btn btn-delete" title="Delete" @onclick="() => Delete(configuration.Id)">
+                                <button class="btn btn-delete" title="Delete" @onclick="() => Delete(configuration.Id, false)">
                                     <i class="fas fa-trash"></i></button>
                             </div>
                         </td>
@@ -122,10 +125,17 @@
     List<Configuration> _configurationDrafts = [];
     List<Configuration> _configurations = [];
 
+    private string textHardware;
+    private string textParams;
+    private string textDefault;
+    private string textM2kSys;
+    
     private HubConnection _hubConnection;
 
     protected override async Task OnInitializedAsync()
     {
+        await AdoService.LoadWorkstationsFromAzureDevOps();
+        
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/configurationHub"))
             .Build();
@@ -139,7 +149,7 @@
         });
 
         await _hubConnection.StartAsync();
-
+        
         NavigationManager.LocationChanged += (sender, args) => { JsRuntime.InvokeVoidAsync("handleRouteChange", args.Location); };
 
         var uri = new Uri(NavigationManager.Uri);
@@ -161,69 +171,44 @@
         if (firstRender) await JsRuntime.InvokeVoidAsync("initHome");
     }
 
-    void EditDraft(int id)
+    void Edit(int id, bool isDraft)
     {
-        Task.Delay(100);
-        var result = false;
-
-        if (!MemoryCache.TryGetValue(id, out result))
-        {
-            NavigationManager.NavigateTo($"/Configurator/{id}?from=Draft");
-        }
-    }
-
-    async Task ExportDraft(int id)
-    {
-    }
-
-    async Task DeleteDraft(int id)
-    {
-        var result = await ConfigurationDraftService.DeleteConfiguration(id);
-        if (result)
-        {
-            var itemToRemove = _configurationDrafts.FirstOrDefault(c => c.Id == id);
-            if (itemToRemove is not null)
-                _configurationDrafts.Remove(itemToRemove);
-
-            Snackbar.Add("Erfolgreich gelöscht!", Severity.Success);
-            StateHasChanged();
-        }
-        else
-        {
-            Snackbar.Add("Konnte nicht gelöscht werden!", Severity.Error);
-        }
-    }
-
-    void Edit(int id)
-    {
-        Task.Delay(100);
-        var result = false;
-
-        if (!MemoryCache.TryGetValue(id, out result))
+        if (!LockService.IsLocked(id))
         {
             NavigationManager.NavigateTo($"/Configurator/{id}?from=Finished");
         }
     }
 
-    async Task Export(int id)
+    async Task Export(int id, bool isDraft)
     {
+        if (!LockService.IsLocked(id))
+        {
+            var zipBytes = await ExportService.ExportConfigurationAsync(id);
+            var fileName = $"Configuration-{id}.zip";
+
+            using var streamRef = new DotNetStreamReference(new MemoryStream(zipBytes));
+            await JsRuntime.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+        }
     }
 
-    async Task Delete(int id)
+    async Task Delete(int id, bool isDraft)
     {
-        var result = await ConfigurationService.DeleteConfiguration(id);
-        if (result)
+        if (!LockService.IsLocked(id))
         {
-            var itemToRemove = _configurations.FirstOrDefault(c => c.Id == id);
-            if (itemToRemove is not null)
-                _configurations.Remove(itemToRemove);
+            var result = await ConfigurationService.DeleteConfiguration(id);
+            if (result)
+            {
+                var itemToRemove = _configurations.FirstOrDefault(c => c.Id == id);
+                if (itemToRemove is not null)
+                    _configurations.Remove(itemToRemove);
 
-            Snackbar.Add("Erfolgreich gelöscht!", Severity.Success);
-            StateHasChanged();
-        }
-        else
-        {
-            Snackbar.Add("Konnte nicht gelöscht werden!", Severity.Error);
+                Snackbar.Add("Erfolgreich gelöscht!", Severity.Success);
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Konnte nicht gelöscht werden!", Severity.Error);
+            }
         }
     }
 
@@ -232,5 +217,4 @@
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
         return DialogService.ShowAsync<Error_Dialog_NoOriginFound>("No origin was found", options);
     }
-
 }

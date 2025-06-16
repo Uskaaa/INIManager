@@ -1,4 +1,4 @@
-window.initConfigurator = (workstationsJson, dotNetHelper) => {
+window.initConfigurator = (workstationsJson, dotNetHelper, config) => {
     console.log('Configurator started!');
     const workstations = workstationsJson;
     let configuration = [];
@@ -11,10 +11,10 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
     const textareaDefault = document.getElementById('preview-content-defaults');
     const textareaM2kSys = document.getElementById('preview-content-m2ksys');
 
-    const textHardware = "hardwareini\nharwarefdalsdkf\nlaskdjfldfkj\ndlaksjdfk\n\n";
-    const textParams = "params\nharwarefdalsdkf\nlaskdjfldfkj\ndlaksjdfk\n\n";
-    const textDefault = "defaults\nharwarefdalsdkf\nlaskdjfldfkj\ndlaksjdfk\n\n";
-    const textM2kSys = "m2ksys\nharwarefdalsdkf\nlaskdjfldfkj\ndlaksjdfk\n\n";
+    const textHardware = config.textHardware;
+    const textParams = config.textParams;
+    const textDefault = config.textDefault;
+    const textM2kSys = config.textM2kSys;
     
     textareaHardware.value += textHardware;
     textareaParams.value += textParams;
@@ -153,3 +153,15 @@ window.initConfigurator = (workstationsJson, dotNetHelper) => {
         });
     });
 };
+
+async function downloadFileFromStream(fileName, contentStreamReference) {
+    const arrayBuffer = await contentStreamReference.arrayBuffer();
+    const blob = new Blob([arrayBuffer]);
+    const url = URL.createObjectURL(blob);
+    const anchorElement = document.createElement('a');
+    anchorElement.href = url;
+    anchorElement.download = fileName ?? 'download.zip';
+    anchorElement.click();
+    anchorElement.remove();
+    URL.revokeObjectURL(url);
+}

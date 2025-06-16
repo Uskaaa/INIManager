@@ -10,9 +10,12 @@
 @inject NavigationManager NavigationManager
 @inject IConfigurationService ConfigurationService
 @inject ConfigurationDraftService ConfigurationDraftService
-@inject WorkstationService WorkstationService
+@inject IWorkstationService WorkstationService
 @inject IDialogService DialogService
 @inject SetSavedService SetSavedService
+@inject IConfiguration Configuration
+@inject IExportService ExportService
+@inject ILockService LockService
 
 <MudPopoverProvider/>
 <MudDialogProvider/>
@@ -32,7 +35,7 @@
                 {
                     <li class="item" draggable="true">
                         <div class="details">
-                            <span>@workstation.Name</span>
+                            <span>@workstation.Bezeichnung</span>
                         </div>
                         <i class="uil uil-draggabledots"></i>
                     </li>
@@ -78,7 +81,7 @@
         <div class="action-buttons">
             <button @onclick="SaveDraft" id="save-draft">Save Draft</button>
             <button @onclick="Save" id="save">Save</button>
-            <button id="export">Export</button>
+            <button @onclick="Export" id="export">Export</button>
         </div>
     </div>
 </div>
@@ -92,6 +95,11 @@
 @code {
     [Parameter] public string Id { get; set; }
 
+    private string textHardware;
+    private string textParams;
+    private string textDefault;
+    private string textM2kSys;
+    
     private Headline _headlineComponent;
     private AutoSaveStatus _autoSaveStatusComponent;
     private AutoSaveType _autoSaveType = AutoSaveType.Error;
@@ -145,6 +153,7 @@
                 break;
 
             case "Finished":
+                LockService.SetLock(Convert.ToInt32(Id));
                 _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id));
                 _configuration.Type = TypeOfConfiguration.Finished;
                 if (_configuration.Workstations != null) await SetSavedService.PublishAsync(_configuration.Workstations);
@@ -158,7 +167,12 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
+        textHardware = Configuration["PreviewTexts:Hardware"];
+        textParams = Configuration["PreviewTexts:Params"];
+        textDefault = Configuration["PreviewTexts:Default"];
+        textM2kSys = Configuration["PreviewTexts:M2kSys"];
+        
+        await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, DotNetObjectReference.Create(this), nameof(OnUserInteraction), new {textHardware, textParams, textDefault, textM2kSys});
     }
 
     [JSInvokable]
@@ -322,8 +336,13 @@
         }
     }
 
-    void Export()
+    async void Export()
     {
+        var zipBytes = await ExportService.ExportConfigurationAsync(_configuration.Id);
+        var fileName = $"Configuration-{_configuration.Id}.zip";
+
+        using var streamRef = new DotNetStreamReference(new MemoryStream(zipBytes));
+        await JsRuntime.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
     }
 
     private Task OpenSave_Dialog_Async(bool draft)
@@ -360,7 +379,7 @@
                 {
                     if (workstationNames[j] != null)
                     {
-                        if (savedWorkstations[i].Name == workstationNames[j].Text && savedWorkstations[i].Sequence == workstationNames[j].Index)
+                        if (savedWorkstations[i].Bezeichnung == workstationNames[j].Text && savedWorkstations[i].Sequence == workstationNames[j].Index)
                         {
                             workstationNames[j] = null;
                             minimumTrue = 1;
@@ -395,7 +414,7 @@
             {
                 if (workstationName != null)
                 {
-                    if (workstation.Name == workstationName.Text)
+                    if (workstation.Bezeichnung == workstationName.Text)
                     {
                         workstation.Sequence = workstationName.Index;
                         configurationWorkstations.Add(workstation);

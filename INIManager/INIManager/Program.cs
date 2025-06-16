@@ -14,8 +14,7 @@ public class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-
-        // Add services to the container.
+        
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents().AddCircuitOptions(options => { options.DetailedErrors = true; });
 
@@ -32,10 +31,19 @@ public class Program
         builder.Services.AddSignalR();
         builder.Services.AddRazorPages();
 
-        builder.Services.AddScoped<AdoService>();
+        builder.Services.AddScoped<IAdoService>(provider =>
+        {
+            var repoUrl = "https://dev.azure.com/yourorg/yourproject/_git/yourrepo";
+            var pat = builder.Configuration["AzureDevOps:PersonalAccessToken"]!;
+            var workstationService = provider.GetRequiredService<IWorkstationService>();
+            return new AdoService(repoUrl, pat, workstationService);
+        });
         builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
-        builder.Services.AddScoped<WorkstationService>();
+        builder.Services.AddScoped<IWorkstationService, WorkstationService>();
+        builder.Services.AddScoped<IExportService, ExportService>();
         builder.Services.AddScoped<ConfigurationDraftService>();
+        builder.Services.AddMemoryCache();
+        builder.Services.AddSingleton<ILockService, LockService>();
         builder.Services.AddScoped<SetSavedService>();
 
         var app = builder.Build();
@@ -51,14 +59,14 @@ public class Program
         app.UseHttpsRedirection();
 
         app.UseAntiforgery();
-        
+
         app.MapStaticAssets();
         app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode();
 
         app.MapRazorPages();
         app.MapHub<ConfigurationHub>("/configurationHub");
-        
+
         app.Run();
     }
 }

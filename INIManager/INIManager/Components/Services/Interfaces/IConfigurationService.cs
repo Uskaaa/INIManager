@@ -8,7 +8,6 @@ public interface IConfigurationService
     Task<List<Configuration>> ReadConfiguration();
     Task<Configuration> ReadConfigurationById(int id);
     Task<bool> DeleteConfiguration(int id);
-
     Task<bool> DeleteWorkstationsOfConfiguration(int configurationid,
         List<Workstation> workstationsToDelete);
 }

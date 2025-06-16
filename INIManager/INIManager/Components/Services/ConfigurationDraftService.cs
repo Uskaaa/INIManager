@@ -102,7 +102,7 @@ public class ConfigurationDraftService : IConfigurationService
                     workstations.Add(new Workstation
                     {
                         Id = reader2.GetInt32("id"),
-                        Name = reader2.GetString("name"),
+                        Bezeichnung = reader2.GetString("name"),
                         Description = reader2.GetString("description"),
                         Sequence = reader2.GetInt32("sequence")
                     });
@@ -162,7 +162,7 @@ public class ConfigurationDraftService : IConfigurationService
                 workstations.Add(new Workstation
                 {
                     Id = reader2.GetInt32("id"),
-                    Name = reader2.GetString("name"),
+                    Bezeichnung = reader2.GetString("name"),
                     Description = reader2.GetString("description"),
                     Sequence = reader2.GetInt32("sequence")
                 });

@@ -8,6 +8,7 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.5" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="9.0.5" />
       <PackageReference Include="MudBlazor" Version="8.3.0" />
       <PackageReference Include="MySqlConnector" Version="2.4.0" />
       <PackageReference Include="Radzen.Blazor" Version="6.3.4" />
