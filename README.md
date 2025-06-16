@@ -145,22 +145,4 @@ class Workstation {
 
 ## Screenshots & Mockups
 
-- Siehe `/docs` oder die SVG-Mockups im Repository für Beispielansichten.
-
----
-
-## Weiterentwicklung & Mitwirken
-
-Pull Requests, Bug Reports und Feature Requests sind willkommen!  
-Bitte beachte die [CONTRIBUTING.md](CONTRIBUTING.md) (sofern vorhanden).
-
----
-
-## Lizenz
-
-Dieses Projekt steht unter der MIT-Lizenz. Siehe [LICENSE](LICENSE) für Details.
-
----
-
-**Kontakt:**  
-Für Fragen oder Support: [dein.email@domain.de] 
+- Siehe Benutzerhandbuch.
