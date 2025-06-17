@@ -6,6 +6,7 @@
 @using INIManager.Components.Pages.Dialogs
 @using INIManager.Components.Services
 @using INIManager.Components.Services.Interfaces
+@using Microsoft.AspNetCore.Identity
 @using DialogOptions = MudBlazor.DialogOptions
 @inject IJSRuntime JsRuntime
 @inject NavigationManager NavigationManager
@@ -129,6 +130,18 @@
     protected override async Task OnInitializedAsync()
     {
         NavigationManager.LocationChanged += (sender, args) => { JsRuntime.InvokeVoidAsync("handleRouteChange", args.Location); };
+        string currentUrl = NavigationManager.Uri;
+        NavigationManager.LocationChanged += (sender, args) =>
+        {
+            var newUrl = args.Location;
+            if (currentUrl.Contains("/configurator") && !newUrl.Contains("/configurator"))
+            {
+                Console.WriteLine("Lock Removed!");
+                LockService.RemoveLock(_configuration.Id);
+            }
+
+            currentUrl = newUrl;
+        };
         
         _workstations = await WorkstationService.ReadWorkstation();
 
@@ -174,7 +187,7 @@
         textDefault = Configuration["PreviewTexts:Default"];
         textM2kSys = Configuration["PreviewTexts:M2kSys"];
         
-        await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, new {textHardware, textParams, textDefault, textM2kSys}, DotNetObjectReference.Create(this), nameof(OnUserInteraction));
+        await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, new {textHardware, textParams, textDefault, textM2kSys}, DotNetObjectReference.Create(this));
     }
 
     [JSInvokable]
@@ -427,13 +440,6 @@
         }
 
         _configuration.Workstations = configurationWorkstations;
-    }
-
-    [JSInvokable]
-    public async Task Unlock()
-    {
-        LockService.RemoveLock(_configuration.Id);
-        Console.WriteLine("Lock removed!");
     }
 
 }

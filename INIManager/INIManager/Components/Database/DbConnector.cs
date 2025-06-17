@@ -4,13 +4,11 @@ namespace INIManager.Components.Database;
 
 public class DbConnector
 {
-    private readonly SemaphoreSlim _connectionLock = new(1, 199);
     private readonly string _connectionString;
 
     public DbConnector(string connectionString)
     {
         _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
-        
     }
 
     // Verbindung öffnen

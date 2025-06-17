@@ -24,11 +24,6 @@ window.initConfigurator = (workstationsJson, config, dotNetHelper) => {
     window.saveConfiguration = async function () {
         return configuration;
     };
-
-    window.addEventListener("hashchange", function (event) {
-        
-        dotNetHelper.invokeMethodAsync('Unlock');
-    });
     
     if (workstations && workstations.length > 0) {
         const sortedWorkstations = [...workstations].sort((a, b) => a.sequence - b.sequence);

@@ -6,6 +6,7 @@ namespace INIManager.Components.Services;
 public class LockService : ILockService
 {
     private readonly IMemoryCache _cache;
+    private int? _currentLockId;
 
     public LockService(IMemoryCache cache)
     {
@@ -15,6 +16,7 @@ public class LockService : ILockService
     public bool SetLock(int id)
     {
         _cache.Set(id, true);
+        _currentLockId = id;
         return true;
     }
 
@@ -26,6 +28,15 @@ public class LockService : ILockService
     public bool RemoveLock(int id)
     {
         _cache.Remove(id);
+
+        if (_currentLockId == id)
+            _currentLockId = null;
+
         return true;
+    }
+
+    public int? GetCurrentLockId()
+    {
+        return _currentLockId;
     }
 }

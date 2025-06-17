@@ -17,6 +17,7 @@
 @inject IAdoService AdoService
 @inject ILockService LockService
 @inject IExportService ExportService
+@inject SetSavedService SetSavedService
 
 <MudPopoverProvider/>
 <MudDialogProvider/>
@@ -54,7 +55,7 @@
                         <td>@configuration.Timestamp</td>
                         <td>
                             <div class="action-buttons">
-                                <button class="btn btn-edit" title="Edit" @onclick="() => Edit(configuration.Id)">
+                                <button class="btn btn-edit" title="Edit" @onclick="() => Edit(configuration.Id, true)">
                                     <i
                                         class="fas fa-edit"></i></button>
                                 <button class="btn btn-export" title="Export"
@@ -62,7 +63,7 @@
                                     <i class="fas fa-file-export"></i>
                                 </button>
                                 <button class="btn btn-delete" title="Delete"
-                                        @onclick="() => Delete(configuration.Id)">
+                                        @onclick="() => Delete(configuration.Id, true)">
                                     <i class="fas fa-trash"></i></button>
                             </div>
                         </td>
@@ -104,14 +105,14 @@
                         <td>
                             <div class="action-buttons">
                                 <button class="btn btn-edit" title="Edit"
-                                        @onclick="() => Edit(configuration.Id)"><i
+                                        @onclick="() => Edit(configuration.Id, false)"><i
                                         class="fas fa-edit"></i></button>
                                 <button class="btn btn-export" title="Export"
                                         @onclick="() => Export(configuration)">
                                     <i class="fas fa-file-export"></i>
                                 </button>
                                 <button class="btn btn-delete" title="Delete"
-                                        @onclick="() => Delete(configuration.Id)">
+                                        @onclick="() => Delete(configuration.Id, false)">
                                     <i class="fas fa-trash"></i></button>
                             </div>
                         </td>
@@ -162,8 +163,15 @@
         _configurationDrafts = await ConfigurationDraftService.ReadConfiguration();
         _configurations = await ConfigurationService.ReadConfiguration();
 
-        _configurationDrafts.ForEach(x => x.Workstations = x.Workstations.OrderBy(w => w.Sequence).ToList());
-        _configurations.ForEach(x => x.Workstations = x.Workstations.OrderBy(w => w.Sequence).ToList());
+        _configurationDrafts.ForEach(async void (x) =>
+        {
+            if (x.Workstations != null) await SetSavedService.PublishAsync(x.Workstations);
+        });
+
+        _configurations.ForEach(async void (x) =>
+        {
+            if (x.Workstations != null) await SetSavedService.PublishAsync(x.Workstations);
+        });
 
         await base.OnInitializedAsync();
     }
@@ -173,11 +181,18 @@
         if (firstRender) await JsRuntime.InvokeVoidAsync("initHome");
     }
 
-    async Task Edit(int id)
+    async Task Edit(int id, bool isDraft)
     {
         if (!LockService.IsLocked(id))
         {
-            NavigationManager.NavigateTo($"/Configurator/{id}?from=Finished");
+            if (isDraft)
+            {
+                NavigationManager.NavigateTo($"/Configurator/{id}?from=Draft");
+            }
+            else
+            {
+                NavigationManager.NavigateTo($"/Configurator/{id}?from=Finished");
+            }
         }
         else
         {
@@ -201,23 +216,45 @@
         }
     }
 
-    async Task Delete(int id)
+    async Task Delete(int id, bool isDraft)
     {
         if (!LockService.IsLocked(id))
         {
-            var result = await ConfigurationService.DeleteConfiguration(id);
-            if (result)
+            if (isDraft)
             {
-                var itemToRemove = _configurations.FirstOrDefault(c => c.Id == id);
-                if (itemToRemove is not null)
-                    _configurations.Remove(itemToRemove);
+                var result = await ConfigurationDraftService.DeleteConfiguration(id);
 
-                Snackbar.Add("Erfolgreich gelöscht!", Severity.Success);
-                StateHasChanged();
+                if (result)
+                {
+                    var itemToRemove = _configurationDrafts.FirstOrDefault(c => c.Id == id);
+                    if (itemToRemove is not null)
+                        _configurationDrafts.Remove(itemToRemove);
+
+                    Snackbar.Add("Erfolgreich gelöscht!", Severity.Success);
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Konnte nicht gelöscht werden!", Severity.Error);
+                }
             }
             else
             {
-                Snackbar.Add("Konnte nicht gelöscht werden!", Severity.Error);
+                var result = await ConfigurationService.DeleteConfiguration(id);
+
+                if (result)
+                {
+                    var itemToRemove = _configurations.FirstOrDefault(c => c.Id == id);
+                    if (itemToRemove is not null)
+                        _configurations.Remove(itemToRemove);
+
+                    Snackbar.Add("Erfolgreich gelöscht!", Severity.Success);
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Konnte nicht gelöscht werden!", Severity.Error);
+                }
             }
         }
         else
@@ -231,7 +268,7 @@
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
         return DialogService.ShowAsync<Error_Dialog_NoOriginFound>("No origin was found", options);
     }
-    
+
     private Task OpenLocked_Dialog()
     {
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };

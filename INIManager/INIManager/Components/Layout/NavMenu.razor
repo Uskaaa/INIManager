@@ -1,8 +1,10 @@
 ﻿@using INIManager.Components.Models
 @using INIManager.Components.Services
+@using INIManager.Components.Services.Interfaces
 @inject ConfigurationDraftService ConfigurationDraftService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
+@inject ILockService LockService
 
 <button class="hamburger-btn">
     <i class="fas fa-bars"></i>
@@ -46,6 +48,13 @@
     {
         var uri = new Uri(NavigationManager.Uri);
 
+        var currentLockId = LockService.GetCurrentLockId();
+
+        if (uri.AbsoluteUri.Contains("Configurator") && currentLockId is not null)
+        {
+            LockService.RemoveLock(currentLockId.Value);
+        }
+        
         switch (id)
         {
             case 1:
