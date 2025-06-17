@@ -38,7 +38,7 @@ public class ConfigurationService : IConfigurationService
                 {
                     await using var command3 = new MySqlCommand(
                         "INSERT INTO configws (configurationid, workstationid, sequence) VALUES (@configurationid, @workstationid, @sequence);",
-                        _dbConnector.GetConnection());
+                        connection);
                     command3.Parameters.AddWithValue("@configurationid", configuration.Id);
                     command3.Parameters.AddWithValue("@workstationid", workstation.Id);
                     command3.Parameters.AddWithValue("@sequence", workstation.Sequence);
@@ -103,7 +103,7 @@ public class ConfigurationService : IConfigurationService
                     workstations.Add(new Workstation
                     {
                         Id = reader2.GetInt32("id"),
-                        Bezeichnung = reader2.GetString("name"),
+                        Name = reader2.GetString("name"),
                         Description = reader2.GetString("description"),
                         Sequence = reader2.GetInt32("sequence")
                     });
@@ -121,7 +121,7 @@ public class ConfigurationService : IConfigurationService
         var configuration = new Configuration();
 
         await using var connection = await _dbConnector.OpenConnectionAsync();
-        Console.WriteLine($"Connection State: {_dbConnector.GetConnection().State}");
+        Console.WriteLine($"Connection State: {connection.State}");
 
         await using (var command = new MySqlCommand(
                          "SELECT id, bezeichnung, timestamp " +
@@ -163,7 +163,7 @@ public class ConfigurationService : IConfigurationService
                 workstations.Add(new Workstation
                 {
                     Id = reader2.GetInt32("id"),
-                    Bezeichnung = reader2.GetString("name"),
+                    Name = reader2.GetString("name"),
                     Description = reader2.GetString("description"),
                     Sequence = reader2.GetInt32("sequence"),
                     IsSaved = true

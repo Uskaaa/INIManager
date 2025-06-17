@@ -25,7 +25,6 @@ public class Program
         string connectionString = "Server=localhost;Port=3306;Database=inimanager_db;Uid=root;Pwd=;";
         builder.Services.AddScoped<DbConnector>(sp =>
             new DbConnector(connectionString));
-        builder.Services.AddScoped<DbManager>();
         builder.Services.AddScoped<ProtectedLocalStorage>();
 
         // builder.Services.AddScoped<IAdoService>(provider =>

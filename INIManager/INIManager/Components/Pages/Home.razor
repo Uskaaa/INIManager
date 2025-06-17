@@ -48,7 +48,7 @@
                             <select>
                                 @foreach (var workstation in configuration.Workstations)
                                 {
-                                    <option value="@workstation.Bezeichnung">@workstation.Bezeichnung</option>
+                                    <option value="@workstation.Name">@workstation.Name</option>
                                 }
                             </select>
                         </td>
@@ -97,7 +97,7 @@
                             <select>
                                 @foreach (var workstation in configuration.Workstations)
                                 {
-                                    <option value="@workstation.Bezeichnung">@workstation.Bezeichnung</option>
+                                    <option value="@workstation.Name">@workstation.Name</option>
                                 }
                             </select>
                         </td>
@@ -145,7 +145,6 @@
 
         _hubConnection.On("ReloadConfigurations", async () =>
         {
-            Console.WriteLine("ReloadConfigurations event received");
             _configurationDrafts = await ConfigurationDraftService.ReadConfiguration();
             _configurations = await ConfigurationService.ReadConfiguration();
             await InvokeAsync(StateHasChanged);
@@ -163,15 +162,8 @@
         _configurationDrafts = await ConfigurationDraftService.ReadConfiguration();
         _configurations = await ConfigurationService.ReadConfiguration();
 
-        _configurationDrafts.ForEach(async void (x) =>
-        {
-            if (x.Workstations != null) await SetSavedService.PublishAsync(x.Workstations);
-        });
-
-        _configurations.ForEach(async void (x) =>
-        {
-            if (x.Workstations != null) await SetSavedService.PublishAsync(x.Workstations);
-        });
+        _configurationDrafts.ForEach(x => x.Workstations = x.Workstations.OrderBy(w => w.Sequence).ToList());
+        _configurations.ForEach(x => x.Workstations = x.Workstations.OrderBy(w => w.Sequence).ToList());
 
         await base.OnInitializedAsync();
     }

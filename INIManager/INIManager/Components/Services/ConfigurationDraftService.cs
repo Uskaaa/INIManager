@@ -102,7 +102,7 @@ public class ConfigurationDraftService : IConfigurationService
                     workstations.Add(new Workstation
                     {
                         Id = reader2.GetInt32("id"),
-                        Bezeichnung = reader2.GetString("name"),
+                        Name = reader2.GetString("name"),
                         Description = reader2.GetString("description"),
                         Sequence = reader2.GetInt32("sequence")
                     });
@@ -120,7 +120,7 @@ public class ConfigurationDraftService : IConfigurationService
         var configuration = new Configuration();
 
         await using var connection = await _dbConnector.OpenConnectionAsync();
-        Console.WriteLine($"Connection State: {_dbConnector.GetConnection().State}");
+        Console.WriteLine($"Connection State: {connection.State}");
 
         await using (var command = new MySqlCommand(
                          "SELECT id, bezeichnung, timestamp " +
@@ -162,7 +162,7 @@ public class ConfigurationDraftService : IConfigurationService
                 workstations.Add(new Workstation
                 {
                     Id = reader2.GetInt32("id"),
-                    Bezeichnung = reader2.GetString("name"),
+                    Name = reader2.GetString("name"),
                     Description = reader2.GetString("description"),
                     Sequence = reader2.GetInt32("sequence")
                 });

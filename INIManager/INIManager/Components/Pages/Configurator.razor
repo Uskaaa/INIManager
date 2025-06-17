@@ -37,7 +37,7 @@
                 {
                     <li class="item" draggable="true">
                         <div class="details">
-                            <span>@workstation.Bezeichnung</span>
+                            <span>@workstation.Name</span>
                         </div>
                         <i class="uil uil-draggabledots"></i>
                     </li>
@@ -101,7 +101,7 @@
     private string textParams;
     private string textDefault;
     private string textM2kSys;
-    
+
     private Headline _headlineComponent;
     private AutoSaveStatus _autoSaveStatusComponent;
     private AutoSaveType _autoSaveType = AutoSaveType.Error;
@@ -130,19 +130,12 @@
     protected override async Task OnInitializedAsync()
     {
         NavigationManager.LocationChanged += (sender, args) => { JsRuntime.InvokeVoidAsync("handleRouteChange", args.Location); };
-        string currentUrl = NavigationManager.Uri;
         NavigationManager.LocationChanged += (sender, args) =>
         {
-            var newUrl = args.Location;
-            if (currentUrl.Contains("/configurator") && !newUrl.Contains("/configurator"))
-            {
-                Console.WriteLine("Lock Removed!");
-                LockService.RemoveLock(_configuration.Id);
-            }
-
-            currentUrl = newUrl;
+            Console.WriteLine("Lock Removed!");
+            LockService.RemoveLock(_configuration.Id);
         };
-        
+
         _workstations = await WorkstationService.ReadWorkstation();
 
         var uri = new Uri(NavigationManager.Uri);
@@ -186,8 +179,8 @@
         textParams = Configuration["PreviewTexts:Params"];
         textDefault = Configuration["PreviewTexts:Default"];
         textM2kSys = Configuration["PreviewTexts:M2kSys"];
-        
-        await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, new {textHardware, textParams, textDefault, textM2kSys}, DotNetObjectReference.Create(this));
+
+        await JsRuntime.InvokeVoidAsync("initConfigurator", _configuration.Workstations, new { textHardware, textParams, textDefault, textM2kSys }, DotNetObjectReference.Create(this));
     }
 
     [JSInvokable]
@@ -395,7 +388,7 @@
                 {
                     if (workstationNames[j] != null)
                     {
-                        if (savedWorkstations[i].Bezeichnung == workstationNames[j].Text && savedWorkstations[i].Sequence == workstationNames[j].Index)
+                        if (savedWorkstations[i].Name == workstationNames[j].Text && savedWorkstations[i].Sequence == workstationNames[j].Index)
                         {
                             workstationNames[j] = null;
                             minimumTrue = 1;
@@ -430,7 +423,7 @@
             {
                 if (workstationName != null)
                 {
-                    if (workstation.Bezeichnung == workstationName.Text)
+                    if (workstation.Name == workstationName.Text)
                     {
                         workstation.Sequence = workstationName.Index;
                         configurationWorkstations.Add(workstation);
@@ -441,5 +434,13 @@
 
         _configuration.Workstations = configurationWorkstations;
     }
+
+    [JSInvokable]
+    public Task Unlock()
+    {
+        LockService.RemoveLock(_configuration.Id);
+        return Task.CompletedTask;
+    }
+
 
 }

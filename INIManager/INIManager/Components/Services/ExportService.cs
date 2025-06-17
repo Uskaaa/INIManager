@@ -48,11 +48,8 @@ public class ExportService : IExportService
                 var ws = sortedWorkstations[i];
                 sb.AppendLine();
                 sb.AppendLine($"[Workstation {ws.Sequence}]");
-                sb.AppendLine($"   Type = {ws.WorkstationType?.Bezeichnung}");
-                sb.AppendLine($"   MinGuiSampleTimeInMs = {ws.MinGuiSampleTimeInMs}");
-                sb.AppendLine($"   HighActive = {ws.HighActive}");
-                sb.AppendLine($"   TcAdsDoAddress = {ws.TcAdsDiAddress}");
-                sb.AppendLine($"   TcAdsDoAdsPort = {ws.TcAdsDiAdsPort}");
+                sb.AppendLine($"   Name = {ws.Name}");
+                sb.AppendLine($"   Description = {ws.Description}");
             }
 
             files[$"{exportFolderName}/{filename}"] = sb.ToString();
