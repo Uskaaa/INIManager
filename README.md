@@ -20,8 +20,6 @@
   Moderne Oberfläche mit MudBlazor und Radzen, responsiv und übersichtlich.
 - **Echtzeit-Updates:**  
   SignalR sorgt für Live-Aktualisierung der Konfigurationslisten bei Änderungen.
-- **Settings:**  
-  Anpassbare Einstellungen wie Sprache, Zeitzone, Datenschutz, Benachrichtigungen und Erscheinungsbild (Dark Mode).
 
 ---
 
@@ -124,7 +122,7 @@ class Workstation {
 
 2. **Projekt klonen:**
    ```bash
-   git clone https://github.com/dein-benutzername/INIManager.git
+   git clone https://github.com/Uskaaa/INIManager.git
    cd INIManager
    ```
 
