@@ -113,34 +113,42 @@ class Workstation {
 
 ---
 
-## Installation & Setup
+# 🐳 Installation & Setup (Docker)
 
-1. **Voraussetzungen:**
-   - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-   - MySQL-Datenbank (Standard: `localhost`, DB: `inimanager_db`)
-   - (Optional) Azure DevOps Repo für Workstations
+## 1. Voraussetzungen
+* Docker ist installiert (mindestens Version 20.10).
+* Zugriff auf GitHub Packages ist vorhanden (für das Docker-Image).
+* Eine `.env`-Datei mit der Datenbankkonfiguration ist angelegt (siehe unten).
 
-2. **Projekt klonen:**
-   ```bash
-   git clone https://github.com/Uskaaa/INIManager.git
-   cd INIManager
-   ```
+## 2. Projekt klonen
 
-3. **Datenbank anpassen:**  
-   Passe ggf. die Verbindungsdaten in `Program.cs` oder `appsettings.json` an.
+```bash
+git clone https://github.com/Uskaaa/INIManager.git
+cd INIManager
+```
 
-4. **Abhängigkeiten installieren & starten:**
-   ```bash
-   dotnet restore
-   dotnet build
-   dotnet run
-   ```
+## 3. `.env`-Datei erstellen
+Erstelle eine `.env`-Datei im selben Verzeichnis wie die `docker-compose.yml`.
 
-5. **Im Browser öffnen:**  
-   Standardmäßig unter [http://localhost:5156](http://localhost:5156) erreichbar.
+**Beispiel `.env`:**
 
----
+```env
+MYSQL_DATABASE=inimanager_db
+MYSQL_ROOT_PASSWORD=CHANGEME
+```
 
-## Screenshots & Mockups
+🔒 **Hinweis:** Verwende niemals echte Passwörter in einem öffentlichen Repository. Diese `.env`-Datei dient nur als Beispiel.
 
-- Siehe Benutzerhandbuch.
+## 4. Docker-Container starten
+Führe den folgenden Befehl aus, um die Container im Hintergrund zu starten:
+
+```bash
+docker compose up -d
+```
+
+Dieser Befehl startet zwei Dienste:
+* Eine **MySQL-Datenbank** (`mysql:8`)
+* Den **INIManager** aus der GitHub Container Registry (`ghcr.io/uskaaa/inimanager:latest`)
+
+## 5. Anwendung im Browser öffnen
+Die Anwendung ist standardmäßig unter der folgenden Adresse erreichbar: http://localhost:8080
