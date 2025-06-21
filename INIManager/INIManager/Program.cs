@@ -22,7 +22,14 @@ public class Program
         builder.Services.AddRadzenComponents();
         builder.Services.AddMudServices();
 
-        string connectionString = "Server=localhost;Port=3306;Database=inimanager_db;Uid=root;Pwd=;";
+        var server = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
+        var port = Environment.GetEnvironmentVariable("DB_PORT") ?? "3306";
+        var database = Environment.GetEnvironmentVariable("DB_NAME") ?? "inimanager_db";
+        var user = Environment.GetEnvironmentVariable("DB_USER") ?? "root";
+        var password = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "";
+
+        var connectionString = $"Server={server};Port={port};Database={database};Uid={user};Pwd={password};";
+        
         builder.Services.AddScoped<DbConnector>(sp =>
             new DbConnector(connectionString));
         builder.Services.AddScoped<ProtectedLocalStorage>();
