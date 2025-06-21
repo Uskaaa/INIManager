@@ -137,7 +137,7 @@ class Workstation {
    ```
 
 5. **Im Browser öffnen:**  
-   Standardmäßig unter [http://localhost:5000](http://localhost:5000) erreichbar.
+   Standardmäßig unter [http://localhost:5156](http://localhost:5156) erreichbar.
 
 ---
 
