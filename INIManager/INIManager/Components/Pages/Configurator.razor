@@ -110,6 +110,7 @@
     private readonly SemaphoreSlim _saveLock = new(1, 1);
     private bool _autoSavePending = false;
     private bool _alreadySaved = false;
+    private bool _wasDraft;
 
     private static readonly DateOnly Time = DateOnly.FromDateTime(DateTime.Now);
     private readonly string _currentDateTime = $"{Time.DayOfWeek.ToString()}, {Time}";
@@ -278,18 +279,33 @@
         try
         {
             _alreadySaved = false;
-            if (_configuration.Type == TypeOfConfiguration.Finished)
+
+
+            var dialogRef = await OpenSave_Dialog_Async(true);
+            var result = await dialogRef.Result;
+            
+            if (result == DialogResult.Ok(true))
             {
-                await ConfigurationService.DeleteConfiguration(_configuration.Id);
-                _configuration.Workstations?.Any(x => x.IsSaved = false);
-                _alreadySaved = false;
+                if (_configuration.Type == TypeOfConfiguration.Finished)
+                {
+                    await ConfigurationService.DeleteConfiguration(_configuration.Id);
+                    _configuration.Workstations?.Any(x => x.IsSaved = false);
+                }
+
+                await SaveLogic(_alreadySaved);
+
+                //Create or Update Configuration
+                var resultCreate = await ConfigurationDraftService.CreateConfiguration(_configuration);
+
+                //Read Configuration and mark saved workstations
+                var resultRead = await ConfigurationDraftService.ReadConfigurationById(_configuration.Id);
+                if (resultCreate)
+                    if (resultRead.Workstations != null)
+                        await SetSavedService.PublishAsync(resultRead.Workstations);
+
+                _configuration.Type = TypeOfConfiguration.Draft;
+                await _autoSaveStatusComponent.UpdateStatus(AutoSaveType.Saved, "Draft saved!");
             }
-
-            _configuration.Type = TypeOfConfiguration.Draft;
-
-            await SaveLogic(_alreadySaved);
-
-            await OpenSave_Dialog_Async(true);
         }
         catch (Exception e)
         {
@@ -319,18 +335,32 @@
         try
         {
             _alreadySaved = false;
-            if (_configuration.Type == TypeOfConfiguration.Draft)
+
+            var dialogRef = await OpenSave_Dialog_Async(false);
+            var result = await dialogRef.Result;
+            
+            if (result == DialogResult.Ok(true))
             {
-                await ConfigurationDraftService.DeleteConfiguration(_configuration.Id);
-                _configuration.Workstations?.Any(x => x.IsSaved = false);
-                _alreadySaved = true;
+                if (_configuration.Type == TypeOfConfiguration.Draft)
+                {
+                    await ConfigurationDraftService.DeleteConfiguration(_configuration.Id);
+                    _configuration.Workstations?.Any(x => x.IsSaved = false);
+                }
+
+                await SaveLogic(_alreadySaved);
+
+                //Create or Update Configuration
+                var resultCreate = await ConfigurationService.CreateConfiguration(_configuration);
+
+                //Read Configuration and mark saved workstations
+                var resultRead = await ConfigurationService.ReadConfigurationById(_configuration.Id);
+                if (resultCreate)
+                    if (resultRead.Workstations != null)
+                        await SetSavedService.PublishAsync(resultRead.Workstations);
+
+                _configuration.Type = TypeOfConfiguration.Draft;
+                await _autoSaveStatusComponent.UpdateStatus(AutoSaveType.Saved, "Draft saved!");
             }
-
-            _configuration.Type = TypeOfConfiguration.Finished;
-
-            await SaveLogic(_alreadySaved);
-
-            await OpenSave_Dialog_Async(false);
         }
         catch (Exception e)
         {
@@ -354,7 +384,7 @@
         await JsRuntime.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
     }
 
-    private Task OpenSave_Dialog_Async(bool draft)
+    private async Task<IDialogReference> OpenSave_Dialog_Async(bool draft)
     {
         var parameters = new DialogParameters
         {
@@ -364,8 +394,8 @@
             { "HeadlineComponent", _headlineComponent }
         };
         var options = new DialogOptions { BackgroundClass = "my-custom-class" };
-        return DialogService.ShowAsync
-            <Save_Dialog>("Save", parameters, options);
+
+        return await DialogService.ShowAsync<Save_Dialog>("Save", parameters, options);
     }
 
     async Task SaveLogic(bool alreadySaved)

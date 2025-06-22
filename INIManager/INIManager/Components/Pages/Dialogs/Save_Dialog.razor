@@ -12,34 +12,29 @@
         <MudTextField @bind-Value="Configuration.Bezeichnung"
                       For="@(() => Configuration.Bezeichnung)"
                       Immediate="true"
-                      Label="Name" />
+                      Label="Name"/>
         <br>
         <MudTextField @bind-Value="Timestamp"
                       For="@(() => Configuration.Timestamp)"
-                      Label="Timestamp" 
+                      Label="Timestamp"
                       ReadOnly="true"/>
     </DialogContent>
     <DialogActions>
         <button class="button-cancel" @onclick="Cancel">Cancel</button>
-        <button class="button-save"  @onclick="Submit">Save</button>
+        <button class="button-save" @onclick="Submit">Save</button>
     </DialogActions>
 </MudDialog>
 
 @code {
-    [CascadingParameter]
-    private IMudDialogInstance MudDialog { get; set; }
-    
-    [Parameter]
-    public Configuration Configuration { get; set; }
-    
-    [Parameter]
-    public bool Draft { get; set; }
-    
-    [Parameter]
-    public AutoSaveStatus AutoSaveStatus { get; set; }
-    
-    [Parameter] 
-    public Headline HeadlineComponent { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public Configuration Configuration { get; set; }
+
+    [Parameter] public bool Draft { get; set; }
+
+    [Parameter] public AutoSaveStatus AutoSaveStatus { get; set; }
+
+    [Parameter] public Headline HeadlineComponent { get; set; }
 
     string Timestamp = DateTime.Now.ToString("yyyy-MM-dd");
 
@@ -47,25 +42,41 @@
     {
         if (Draft)
         {
+            if (Configuration.Type == TypeOfConfiguration.Finished)
+            {
+                await ConfigurationService.DeleteConfiguration(Configuration.Id);
+                Configuration.Workstations?.Any(x => x.IsSaved = false);
+            }
+
             //Create or Update Configuration
             var resultCreate = await ConfigurationDraftService.CreateConfiguration(Configuration);
-            
+
             //Read Configuration and mark saved workstations
             var resultRead = await ConfigurationDraftService.ReadConfigurationById(Configuration.Id);
-            if (resultCreate) if (resultRead.Workstations != null) await SetSavedService.PublishAsync(resultRead.Workstations);
-            
+            if (resultCreate)
+                if (resultRead.Workstations != null)
+                    await SetSavedService.PublishAsync(resultRead.Workstations);
+
             Configuration.Type = TypeOfConfiguration.Draft;
             await AutoSaveStatus.UpdateStatus(AutoSaveType.Saved, "Draft saved!");
         }
         else
         {
+            if (Configuration.Type == TypeOfConfiguration.Draft)
+            {
+                await ConfigurationDraftService.DeleteConfiguration(Configuration.Id);
+                Configuration.Workstations?.Any(x => x.IsSaved = false);
+            }
+
             //Create or Update Configuration
             var resultCreate = await ConfigurationService.CreateConfiguration(Configuration);
-            
+
             //Read Configuration and mark saved workstations
             var resultRead = await ConfigurationService.ReadConfigurationById(Configuration.Id);
-            if (resultCreate) if (resultRead.Workstations != null) await SetSavedService.PublishAsync(resultRead.Workstations);
-            
+            if (resultCreate)
+                if (resultRead.Workstations != null)
+                    await SetSavedService.PublishAsync(resultRead.Workstations);
+
             Configuration.Type = TypeOfConfiguration.Finished;
             await AutoSaveStatus.UpdateStatus(AutoSaveType.Saved, "Configuration saved!");
         }
@@ -78,4 +89,5 @@
     {
         MudDialog.Close(DialogResult.Cancel());
     }
+
 }
