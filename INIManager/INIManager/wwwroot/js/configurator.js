@@ -1,7 +1,7 @@
 window.initConfigurator = (workstationsJson, config, dotNetHelper) => {
     console.log('Configurator started!');
     const workstations = workstationsJson;
-    let configuration = [];
+    window.configuration = [];
 
     const targetList = document.querySelector(".target-list");
     const draggableLists = document.querySelectorAll(".draggable-list");
@@ -16,13 +16,13 @@ window.initConfigurator = (workstationsJson, config, dotNetHelper) => {
     const textDefault = config.textDefault;
     const textM2kSys = config.textM2kSys;
 
-    textareaHardware.value += textHardware;
-    textareaParams.value += textParams;
-    textareaDefault.value += textDefault;
-    textareaM2kSys.value += textM2kSys;
+    textareaHardware.value = textHardware;
+    textareaParams.value = textParams;
+    textareaDefault.value = textDefault;
+    textareaM2kSys.value = textM2kSys;
 
     window.saveConfiguration = async function () {
-        return configuration;
+        return window.configuration;
     };
 
     window.addEventListener("beforeunload", function () {
@@ -62,12 +62,12 @@ window.initConfigurator = (workstationsJson, config, dotNetHelper) => {
         const itemsInTarget = targetList.querySelectorAll(".item");
         const itemTexts = Array.from(itemsInTarget).map(item => item.textContent.trim());
 
-        textareaHardware.value = textHardware + (itemTexts.join("\n"));
-        textareaParams.value = textParams + (itemTexts.join("\n"));
-        textareaDefault.value = textDefault + (itemTexts.join("\n"));
-        textareaM2kSys.value = textM2kSys + (itemTexts.join("\n"));
+        textareaHardware.value = textHardware + "\n" + (itemTexts.join("\n"));
+        textareaParams.value = textParams + "\n" + (itemTexts.join("\n"));
+        textareaDefault.value = textDefault + "\n" + (itemTexts.join("\n"));
+        textareaM2kSys.value = textM2kSys + "\n" + (itemTexts.join("\n"));
 
-        configuration = Array.from(itemsInTarget).map((item, index) => ({
+        window.configuration = Array.from(itemsInTarget).map((item, index) => ({
             text: item.textContent.trim(),
             index: index
         }));

@@ -38,49 +38,8 @@
 
     string Timestamp = DateTime.Now.ToString("yyyy-MM-dd");
 
-    private async void Submit()
+    private async Task Submit()
     {
-        if (Draft)
-        {
-            if (Configuration.Type == TypeOfConfiguration.Finished)
-            {
-                await ConfigurationService.DeleteConfiguration(Configuration.Id);
-                Configuration.Workstations?.Any(x => x.IsSaved = false);
-            }
-
-            //Create or Update Configuration
-            var resultCreate = await ConfigurationDraftService.CreateConfiguration(Configuration);
-
-            //Read Configuration and mark saved workstations
-            var resultRead = await ConfigurationDraftService.ReadConfigurationById(Configuration.Id);
-            if (resultCreate)
-                if (resultRead.Workstations != null)
-                    await SetSavedService.PublishAsync(resultRead.Workstations);
-
-            Configuration.Type = TypeOfConfiguration.Draft;
-            await AutoSaveStatus.UpdateStatus(AutoSaveType.Saved, "Draft saved!");
-        }
-        else
-        {
-            if (Configuration.Type == TypeOfConfiguration.Draft)
-            {
-                await ConfigurationDraftService.DeleteConfiguration(Configuration.Id);
-                Configuration.Workstations?.Any(x => x.IsSaved = false);
-            }
-
-            //Create or Update Configuration
-            var resultCreate = await ConfigurationService.CreateConfiguration(Configuration);
-
-            //Read Configuration and mark saved workstations
-            var resultRead = await ConfigurationService.ReadConfigurationById(Configuration.Id);
-            if (resultCreate)
-                if (resultRead.Workstations != null)
-                    await SetSavedService.PublishAsync(resultRead.Workstations);
-
-            Configuration.Type = TypeOfConfiguration.Finished;
-            await AutoSaveStatus.UpdateStatus(AutoSaveType.Saved, "Configuration saved!");
-        }
-
         if (Configuration.Bezeichnung != null) await HeadlineComponent.UpdateTitle(Configuration.Bezeichnung);
         MudDialog.Close(DialogResult.Ok(true));
     }
