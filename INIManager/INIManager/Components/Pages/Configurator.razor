@@ -282,7 +282,7 @@
 
             var dialogRef = await OpenSave_Dialog_Async(true);
             var result = await dialogRef.Result;
-            
+
             if (!result.Canceled)
             {
                 if (_configuration.Type == TypeOfConfiguration.Finished)
@@ -337,7 +337,7 @@
 
             var dialogRef = await OpenSave_Dialog_Async(false);
             var result = await dialogRef.Result;
-            
+
             if (!result.Canceled)
             {
                 if (_configuration.Type == TypeOfConfiguration.Draft)

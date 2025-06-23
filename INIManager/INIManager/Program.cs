@@ -26,7 +26,7 @@ public class Program
         var port = Environment.GetEnvironmentVariable("DB_PORT") ?? "3306";
         var database = Environment.GetEnvironmentVariable("DB_NAME") ?? "inimanager_db";
         var user = Environment.GetEnvironmentVariable("DB_USER") ?? "root";
-        var password = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "";
+        var password = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "durchfall";
 
         var connectionString = $"Server={server};Port={port};Database={database};Uid={user};Pwd={password};";
         

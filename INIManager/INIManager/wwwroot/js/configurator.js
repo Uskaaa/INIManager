@@ -1,7 +1,7 @@
 window.initConfigurator = (workstationsJson, config, dotNetHelper) => {
     console.log('Configurator started!');
     const workstations = workstationsJson;
-    window.configuration = [];
+    
 
     const targetList = document.querySelector(".target-list");
     const draggableLists = document.querySelectorAll(".draggable-list");
@@ -20,10 +20,6 @@ window.initConfigurator = (workstationsJson, config, dotNetHelper) => {
     textareaParams.value = textParams;
     textareaDefault.value = textDefault;
     textareaM2kSys.value = textM2kSys;
-
-    window.saveConfiguration = async function () {
-        return window.configuration;
-    };
 
     window.addEventListener("beforeunload", function () {
         dotNetHelper.invokeMethodAsync('Unlock');
@@ -168,3 +164,9 @@ async function downloadFileFromStream(fileName, contentStreamReference) {
     anchorElement.remove();
     URL.revokeObjectURL(url);
 }
+
+window.configuration = [];
+
+window.saveConfiguration = async function () {
+    return window.configuration;
+};
