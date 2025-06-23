@@ -116,19 +116,22 @@ class Workstation {
 # 🐳 Installation & Setup (Docker)
 
 ## 1. Voraussetzungen
-* Docker ist installiert (mindestens Version 20.10).
+* Docker ist installiert.
 * Zugriff auf GitHub Packages ist vorhanden (für das Docker-Image).
-* Eine `.env`-Datei mit der Datenbankkonfiguration ist angelegt (siehe unten).
 
-## 2. Projekt klonen
+## 2. Release herunterladen und entpacken
+
+1. Gehe zu den [Releases](https://github.com/Uskaaa/INIManager/releases) auf GitHub
+2. Lade die neueste Release-Version herunter (z.B. `INIManager-v1.0.0.zip`)
+3. Entpacke das Archiv in einen Ordner deiner Wahl
+4. Navigiere in den entpackten Ordner:
 
 ```bash
-git clone https://github.com/Uskaaa/INIManager.git
-cd INIManager
+cd INIManager-v1.0.0
 ```
 
-## 3. `.env`-Datei erstellen
-Erstelle eine `.env`-Datei im selben Verzeichnis wie die `docker-compose.yml`.
+## 3. `.env`-Datei anpassen
+Passe die `.env`-Datei an, welche sich im selben Verzeichnis wie die `docker-compose.yml` befindet.
 
 **Beispiel `.env`:**
 
