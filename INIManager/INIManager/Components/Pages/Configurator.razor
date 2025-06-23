@@ -14,7 +14,6 @@
 @inject ConfigurationDraftService ConfigurationDraftService
 @inject IWorkstationService WorkstationService
 @inject IDialogService DialogService
-@inject SetSavedService SetSavedService
 @inject IConfiguration Configuration
 @inject IExportService ExportService
 @inject ILockService LockService
@@ -155,7 +154,6 @@
                 LockService.SetLock(Convert.ToInt32(Id));
                 _configuration = await ConfigurationDraftService.ReadConfigurationById(Convert.ToInt32(Id));
                 _configuration.Type = TypeOfConfiguration.Draft;
-                if (_configuration.Workstations != null) await SetSavedService.PublishAsync(_configuration.Workstations);
                 _autoSave = "Draft saved!";
                 _autoSaveType = AutoSaveType.Saved;
                 break;
@@ -164,7 +162,6 @@
                 LockService.SetLock(Convert.ToInt32(Id));
                 _configuration = await ConfigurationService.ReadConfigurationById(Convert.ToInt32(Id));
                 _configuration.Type = TypeOfConfiguration.Finished;
-                if (_configuration.Workstations != null) await SetSavedService.PublishAsync(_configuration.Workstations);
                 _autoSave = "Configuration saved!";
                 _autoSaveType = AutoSaveType.Saved;
                 break;
@@ -226,16 +223,14 @@
                 {
                     //Read Configuration and mark saved workstations
                     var resultRead = await ConfigurationDraftService.ReadConfigurationById(_configuration.Id);
-                    if (resultRead.Workstations != null) await SetSavedService.PublishAsync(resultRead.Workstations);
-
+                    _configuration.Workstations = resultRead.Workstations;
                     _autoSave = "Draft saved!";
                 }
                 else if (_configuration.Type is TypeOfConfiguration.Finished)
                 {
                     //Read Configuration and mark saved workstations
                     var resultRead = await ConfigurationService.ReadConfigurationById(_configuration.Id);
-                    if (resultRead.Workstations != null) await SetSavedService.PublishAsync(resultRead.Workstations);
-
+                    _configuration.Workstations = resultRead.Workstations;
                     _autoSave = "Configuration saved!";
                 }
 
@@ -300,8 +295,8 @@
                 var resultRead = await ConfigurationDraftService.ReadConfigurationById(_configuration.Id);
                 if (resultCreate)
                     if (resultRead.Workstations != null)
-                        await SetSavedService.PublishAsync(resultRead.Workstations);
-
+                _configuration.Workstations = resultRead.Workstations;
+                
                 _configuration.Type = TypeOfConfiguration.Draft;
                 await _autoSaveStatusComponent.UpdateStatus(AutoSaveType.Saved, "Draft saved!");
             }
@@ -355,7 +350,7 @@
                 var resultRead = await ConfigurationService.ReadConfigurationById(_configuration.Id);
                 if (resultCreate)
                     if (resultRead.Workstations != null)
-                        await SetSavedService.PublishAsync(resultRead.Workstations);
+                _configuration.Workstations = resultRead.Workstations;
 
                 _configuration.Type = TypeOfConfiguration.Draft;
                 await _autoSaveStatusComponent.UpdateStatus(AutoSaveType.Saved, "Draft saved!");
@@ -402,9 +397,9 @@
         List<Workstation>? savedWorkstations = [];
         if (_configuration.Workstations != null && !alreadySaved)
         {
-            savedWorkstations = await SetSavedService.ListenOnceAsync();
+            savedWorkstations = _configuration.Workstations;
         }
-
+        
         List<ConfigurationItem?> workstationNames = await JsRuntime.InvokeAsync<List<ConfigurationItem?>>("saveConfiguration");
         List<Workstation> configurationWorkstations = [];
         List<Workstation> workstationsToDelete = [];

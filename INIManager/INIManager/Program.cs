@@ -47,7 +47,6 @@ public class Program
         builder.Services.AddScoped<IWorkstationService, WorkstationService>();
         builder.Services.AddScoped<IExportService, ExportService>();
         builder.Services.AddScoped<ConfigurationDraftService>();
-        builder.Services.AddScoped<SetSavedService>();
         builder.Services.AddSingleton<ILockService, LockService>();
         builder.Services.AddMemoryCache();
         builder.Services.AddSignalR();
