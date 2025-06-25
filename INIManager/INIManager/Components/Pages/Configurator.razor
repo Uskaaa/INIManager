@@ -295,8 +295,8 @@
                 var resultRead = await ConfigurationDraftService.ReadConfigurationById(_configuration.Id);
                 if (resultCreate)
                     if (resultRead.Workstations != null)
-                _configuration.Workstations = resultRead.Workstations;
-                
+                        _configuration.Workstations = resultRead.Workstations;
+
                 _configuration.Type = TypeOfConfiguration.Draft;
                 await _autoSaveStatusComponent.UpdateStatus(AutoSaveType.Saved, "Draft saved!");
             }
@@ -313,15 +313,18 @@
         }
     }
 
-    async void Save()
+    protected async Task HandleSaveDraft() => await PerformSaveAsync(true);
+    protected async Task HandleSave() => await PerformSaveAsync(false);
+
+    private async Task PerformSaveAsync(bool isDraft)
     {
         if (_autoSavePending)
         {
             _autoSavePending = false;
             _timer?.Dispose();
+            _autoSaveType = AutoSaveType.Error;
             if (_configuration.Type == TypeOfConfiguration.Draft) _autoSave = "Draft not saved!";
             if (_configuration.Type == TypeOfConfiguration.Finished) _autoSave = "Configuration not saved!";
-            _autoSaveType = AutoSaveType.Error;
             await _autoSaveStatusComponent.UpdateStatus(_autoSaveType, _autoSave);
         }
 
@@ -330,15 +333,23 @@
         {
             _alreadySaved = false;
 
-            var dialogRef = await OpenSave_Dialog_Async(false);
+            var dialogRef = await OpenSave_Dialog_Async(isDraft);
             var result = await dialogRef.Result;
 
             if (!result.Canceled)
             {
-                if (_configuration.Type == TypeOfConfiguration.Draft)
+                if (_configuration.Type == TypeOfConfiguration.Draft && !isDraft)
                 {
                     await ConfigurationDraftService.DeleteConfiguration(_configuration.Id);
                     _configuration.Workstations?.Any(x => x.IsSaved = false);
+                }
+                else if (_configuration.Type == TypeOfConfiguration.Finished && isDraft)
+                {
+                    await ConfigurationService.DeleteConfiguration(_configuration.Id);
+                    _configuration.Workstations?.Any(x => x.IsSaved = false);
+                }
+                {
+                    
                 }
 
                 await SaveLogic(_alreadySaved);
@@ -350,7 +361,7 @@
                 var resultRead = await ConfigurationService.ReadConfigurationById(_configuration.Id);
                 if (resultCreate)
                     if (resultRead.Workstations != null)
-                _configuration.Workstations = resultRead.Workstations;
+                        _configuration.Workstations = resultRead.Workstations;
 
                 _configuration.Type = TypeOfConfiguration.Draft;
                 await _autoSaveStatusComponent.UpdateStatus(AutoSaveType.Saved, "Draft saved!");
@@ -365,6 +376,7 @@
         finally
         {
             _saveLock.Release();
+            StateHasChanged();
         }
     }
 
@@ -399,7 +411,7 @@
         {
             savedWorkstations = _configuration.Workstations;
         }
-        
+
         List<ConfigurationItem?> workstationNames = await JsRuntime.InvokeAsync<List<ConfigurationItem?>>("saveConfiguration");
         List<Workstation> configurationWorkstations = [];
         List<Workstation> workstationsToDelete = [];
